@@ -3,6 +3,7 @@ _inspect/
 _verify/
 node_modules/
 frames/_raw/
+frames/_up/
 frames/video1/
 frames/video2/
 

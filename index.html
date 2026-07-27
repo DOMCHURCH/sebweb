@@ -31,9 +31,13 @@
     --ink-dim:     rgba(255,255,255,.62);
     --ink-faint:   rgba(255,255,255,.34);
 
-    --card-bg:     rgba(10, 15, 40, .75);
-    --card-border: rgba(100, 149, 237, .30);
-    --card-shadow: 0 0 30px rgba(30, 80, 200, .40);
+    --card-border:   rgba(255,255,255,.70);
+    --card-shadow:   0 24px 70px rgba(4,8,25,.50);
+    --card-ink:      #0c1230;
+    --card-ink-dim:  rgba(14,20,45,.74);
+    --card-ink-faint:rgba(14,20,45,.50);
+    --card-accent:   #1a4fd6;
+    --card-accent-2: #163fb0;
 
     --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --font-sans:    'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -225,99 +229,98 @@
   #overlay.active #prompt{ opacity:1; animation:pulse 3.4s ease-in-out infinite; }
   @keyframes pulse{ 0%,100%{opacity:.28} 50%{opacity:.6} }
 
-  /* ================= CARD (glassmorphic modal) ===================== */
+  /* ================= CARD (frosty-white glass modal) ============== */
   #scrim{
     position:fixed; inset:0; z-index:99;
-    background:rgba(0,0,0,.55);
+    background:rgba(4,8,22,.62);
     opacity:0; visibility:hidden;
     transition:opacity var(--dur) var(--ease), visibility var(--dur);
-    -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
   }
   #scrim.show{ opacity:1; visibility:visible; }
 
   #card{
     position:fixed; top:50%; left:50%;
-    transform:translate(-50%,-46%) scale(.98);
+    transform:translate(-50%,-50%);
     z-index:100;
     width:min(680px, calc(100vw - 32px));
     max-height:min(86vh, 860px);
     overflow-y:auto; overscroll-behavior:contain;
-    background:var(--card-bg);
-    -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
+    background:linear-gradient(160deg, rgba(255,255,255,.82), rgba(235,242,255,.66));
+    -webkit-backdrop-filter:blur(30px) saturate(155%); backdrop-filter:blur(30px) saturate(155%);
     border:1px solid var(--card-border);
-    border-radius:16px;
-    box-shadow:var(--card-shadow);
-    color:#fff;
+    border-radius:18px;
+    box-shadow:var(--card-shadow), inset 0 1px 0 rgba(255,255,255,.9);
+    color:var(--card-ink);
     padding:28px clamp(22px,4vw,36px) 54px;
     opacity:0; visibility:hidden;
-    transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease), visibility var(--dur);
   }
-  #card.show{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+  #card.show{ opacity:1; visibility:visible; }
   /* opaque fallback where backdrop-filter is unsupported */
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    #card{ background:rgba(8,12,32,.97); }
-    #scrim{ background:rgba(0,0,0,.8); }
+    #card{ background:rgba(245,248,255,.98); }
+    #scrim{ background:rgba(4,8,22,.82); }
   }
 
   .card-media{
     position:relative; width:100%; aspect-ratio:16/9;
-    border-radius:8px; background:rgba(255,255,255,.05);
+    border-radius:10px; background:rgba(12,18,45,.05);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden; margin-bottom:22px;
-    border:1px solid rgba(255,255,255,.06);
+    border:1px solid rgba(12,18,45,.09);
   }
-  .card-media span{ font-weight:200; letter-spacing:.5em; font-size:.7rem; color:var(--ink-faint); }
+  .card-media span{ font-weight:300; letter-spacing:.5em; font-size:.7rem; color:rgba(12,18,45,.42); }
   .card-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 
   .card-kicker{
-    font-weight:300; letter-spacing:.42em; text-transform:uppercase;
-    font-size:.56rem; color:var(--neon-bright);
+    font-weight:500; letter-spacing:.42em; text-transform:uppercase;
+    font-size:.56rem; color:var(--card-accent);
     margin:0 0 .55rem;
   }
   .card-title{
-    font-family:var(--font-sans); font-weight:300;
-    letter-spacing:.16em; text-transform:uppercase;
+    font-family:var(--font-sans); font-weight:400;
+    letter-spacing:.14em; text-transform:uppercase;
     font-size:clamp(1.15rem,2.6vw,1.5rem);
-    margin:0 0 1.4rem; color:#fff;
+    margin:0 0 1.4rem; color:var(--card-ink);
   }
-  .entry{ margin:0 0 1.15rem; padding-left:14px; border-left:1px solid rgba(100,149,237,.28); }
+  .entry{ margin:0 0 1.15rem; padding-left:14px; border-left:1px solid rgba(26,79,214,.30); }
   .entry:last-child{ margin-bottom:0; }
   .entry-head{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; flex-wrap:wrap; }
-  .entry-role{ font-weight:400; font-size:.92rem; letter-spacing:.02em; color:#fff; }
-  .entry-org{ font-weight:300; font-size:.82rem; color:var(--neon-bright); letter-spacing:.03em; }
-  .entry-date{ font-weight:300; font-size:.68rem; color:var(--ink-faint); letter-spacing:.14em;
+  .entry-role{ font-weight:500; font-size:.92rem; letter-spacing:.01em; color:var(--card-ink); }
+  .entry-org{ font-weight:500; font-size:.82rem; color:var(--card-accent-2); letter-spacing:.02em; }
+  .entry-date{ font-weight:400; font-size:.68rem; color:var(--card-ink-faint); letter-spacing:.12em;
     text-transform:uppercase; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .entry-desc, .card-text{
-    font-weight:300; font-size:14px; line-height:1.8; color:rgba(255,255,255,.78);
+    font-weight:400; font-size:14px; line-height:1.8; color:var(--card-ink-dim);
     margin:.5rem 0 0;
   }
   .card-text{ margin:0 0 1.1rem; }
   .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:1.3rem; }
   .tag{
-    font-weight:300; font-size:.66rem; letter-spacing:.12em;
+    font-weight:500; font-size:.66rem; letter-spacing:.10em;
     padding:6px 11px; border-radius:999px;
-    background:rgba(100,149,237,.10);
-    border:1px solid rgba(100,149,237,.24);
-    color:rgba(255,255,255,.8);
+    background:rgba(26,79,214,.09);
+    border:1px solid rgba(26,79,214,.28);
+    color:var(--card-accent-2);
   }
 
   .icon-btn{
     position:absolute; width:44px; height:44px;
     display:flex; align-items:center; justify-content:center;
-    background:transparent; border:0; color:#fff; cursor:pointer;
-    font-size:24px; line-height:1; opacity:.8;
+    background:transparent; border:0; color:var(--card-ink); cursor:pointer;
+    font-size:24px; line-height:1; opacity:.55;
     transition:opacity 200ms var(--ease), transform 200ms var(--ease);
     touch-action:manipulation;
     -webkit-tap-highlight-color:transparent;
   }
   .icon-btn:hover{ opacity:1; }
   .icon-btn:active{ transform:scale(.9); }
-  .icon-btn:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:2px; border-radius:8px; opacity:1; }
-  #card-close{ top:10px; right:12px; font-size:22px; }
+  .icon-btn:focus-visible{ outline:2px solid var(--card-accent); outline-offset:2px; border-radius:8px; opacity:1; }
+  #card-close{ top:10px; right:12px; font-size:26px; }
   #card-next{ bottom:12px; right:14px; }
   .card-count{
     position:absolute; bottom:20px; left:clamp(22px,4vw,36px);
-    font-weight:200; font-size:.66rem; letter-spacing:.24em; color:var(--ink-faint);
+    font-weight:500; font-size:.66rem; letter-spacing:.24em; color:var(--card-ink-faint);
     font-variant-numeric:tabular-nums;
   }
 
@@ -394,7 +397,7 @@
 
   <!-- Card modal -->
   <div id="scrim"></div>
-  <div id="card" role="dialog" aria-modal="true" aria-labelledby="card-title-el" tabindex="-1">
+  <div id="card" role="dialog" aria-modal="true" aria-labelledby="card-title-el" tabindex="-1" data-lenis-prevent>
     <button id="card-close" class="icon-btn" aria-label="Close">&times;</button>
     <div class="card-media" id="card-media"></div>
     <p class="card-kicker" id="card-kicker"></p>
@@ -425,6 +428,11 @@
   <noscript>
     <div id="nojs">This portfolio is an interactive, scroll-driven experience that requires JavaScript. Please enable it — or view the text version above with a screen reader.</div>
   </noscript>
+
+<!-- Smooth scroll (Lenis) + animation (GSAP). Loaded from CDN; the site
+     degrades to native scroll + CSS if these fail to load. -->
+<script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
 
 <script>
 (function(){
@@ -534,13 +542,15 @@
   var coverRect = { x:0, y:0, w:0, h:0 };
   var frameW = TIER === 'mobile' ? 900 : 1600;   // fallback until first img loads
   var frameH = TIER === 'mobile' ? 502 : 894;
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   var overlayActive = false;
   var cardOpen = false;
   var curCard = 0;
   var lockY = 0;
   var lastFocus = null;
   var hintShown = false;
+  var lenis = null;
+  var wheelOpts = { passive:false, capture:true };
 
   function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
   function pad(n){ n=''+n; while(n.length<4) n='0'+n; return n; }
@@ -548,6 +558,7 @@
   // visible-viewport dims — tracks iOS/Android URL-bar show/hide, unlike innerHeight
   function viewW(){ return (window.visualViewport && window.visualViewport.width)  || window.innerWidth; }
   function viewH(){ return (window.visualViewport && window.visualViewport.height) || window.innerHeight; }
+  function startHold(){ return Math.round(viewH() * 0.6); }  // title lingers ~0.6 screens before scrubbing
 
   /* ================= PRELOAD ======================================= */
   function preload(){
@@ -584,18 +595,22 @@
     draw(0);
     // reveal scroll hint shortly after
     setTimeout(function(){ if(!hintShown){ hint.classList.add('show'); } }, 700);
-    requestAnimationFrame(tick);
+    // Lenis drives renderTick via the GSAP ticker; otherwise use a plain rAF loop
+    if(!lenis){ requestAnimationFrame(rafLoop); }
   }
 
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // capped at 1.5x: source frames are ~1600px, so extra device pixels are wasted fill (perf)
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
     canvas.style.width = vw + 'px';
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'medium';
   }
 
   function computeCover(){
@@ -747,12 +762,16 @@
   /* ================= MAIN LOOP ==================================== */
   function scrollTop(){ return window.pageYOffset || document.documentElement.scrollTop || 0; }
 
-  function tick(){
+  function renderTick(){
+    if(!ready) return;
     if(!cardOpen){
-      targetFrame = clamp(Math.floor(scrollTop() / PPF), 0, LAST);
+      var s = scrollTop();
+      var HOLD = startHold();                       // hold on the title before scrubbing begins
+      var f = s <= HOLD ? 0 : Math.floor((s - HOLD) / PPF);
+      targetFrame = clamp(f, 0, LAST);
     }
-    if(reduceMotion){
-      renderFrame = targetFrame;
+    if(lenis || reduceMotion){
+      renderFrame = targetFrame;                    // Lenis already smooths the scroll input
     } else {
       renderFrame += (targetFrame - renderFrame) * 0.16;
       if(Math.abs(targetFrame - renderFrame) < 0.4) renderFrame = targetFrame;
@@ -760,8 +779,8 @@
     var idx = Math.round(renderFrame);
     if(idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
     updateOverlay();
-    requestAnimationFrame(tick);
   }
+  function rafLoop(){ renderTick(); requestAnimationFrame(rafLoop); }
 
   function updateOverlay(){
     var active = (targetFrame >= LAST) && !cardOpen;
@@ -808,47 +827,84 @@
     b.innerHTML = html;
   }
 
-  function openCard(i){
-    curCard = i;
-    renderCard(i);
-    if(!cardOpen){
-      lastFocus = document.activeElement;
-      lockScroll();
-      cardOpen = true;
-      body.classList.add('card-open');
-      scrim.classList.add('show');
-      card.classList.add('show');
+  var GSAP = function(){ return window.gsap; };
+
+  function showCard(){
+    scrim.classList.add('show');
+    card.classList.add('show');
+    if(GSAP()){
+      gsap.killTweensOf(card);
+      gsap.fromTo(card,
+        { opacity:0, y:28, scale:0.96, xPercent:-50, yPercent:-50 },
+        { opacity:1, y:0, scale:1, duration:0.55, ease:'expo.out' });
     }
+  }
+  function hideCard(){
+    scrim.classList.remove('show');
+    if(GSAP()){
+      gsap.killTweensOf(card);
+      gsap.to(card, { opacity:0, y:16, scale:0.98, duration:0.28, ease:'power2.in',
+        onComplete:function(){ card.classList.remove('show'); } });
+    } else {
+      card.classList.remove('show');
+    }
+  }
+  function swapCard(i){
+    curCard = i;
+    if(GSAP()){
+      gsap.to(card, { opacity:0, duration:0.15, ease:'power1.in', onComplete:function(){
+        renderCard(i); card.scrollTop = 0;
+        gsap.fromTo(card, { opacity:0, y:12 }, { opacity:1, y:0, duration:0.34, ease:'expo.out' });
+      }});
+    } else {
+      renderCard(i); card.scrollTop = 0;
+    }
+  }
+
+  function openCard(i){
+    if(cardOpen){ swapCard(i); return; }         // already open -> animate the content swap
+    curCard = i;
+    lastFocus = document.activeElement;
+    lockScroll();
+    cardOpen = true;
+    body.classList.add('card-open');
+    renderCard(i);
     card.scrollTop = 0;
+    showCard();
     setTimeout(function(){ card.focus(); }, 60);
   }
   function closeCard(){
     if(!cardOpen) return;
     cardOpen = false;
     body.classList.remove('card-open');
-    scrim.classList.remove('show');
-    card.classList.remove('show');
+    hideCard();
     unlockScroll();
     if(lastFocus && lastFocus.focus){ lastFocus.focus(); }
   }
   function nextCard(){ openCard((curCard + 1) % CARDS.length); }
 
-  /* scroll lock via fixed body; targetFrame is frozen while a card is open */
+  /* Scroll lock while a card is open. targetFrame is frozen via the cardOpen
+     guard; here we stop Lenis (or pin the body) and swallow background scroll. */
+  function preventScroll(e){ if(card.contains(e.target)) return; e.preventDefault(); }
   function lockScroll(){
-    lockY = scrollTop();
-    body.style.position = 'fixed';
-    body.style.top = (-lockY) + 'px';
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
+    if(lenis){ lenis.stop(); }
+    else {
+      lockY = scrollTop();
+      body.style.position = 'fixed'; body.style.top = (-lockY) + 'px';
+      body.style.left = '0'; body.style.right = '0'; body.style.width = '100%';
+    }
+    window.addEventListener('wheel', preventScroll, wheelOpts);
+    window.addEventListener('touchmove', preventScroll, wheelOpts);
   }
   function unlockScroll(){
-    body.style.position = '';
-    body.style.top = '';
-    body.style.left = '';
-    body.style.right = '';
-    body.style.width = '';
-    window.scrollTo(0, lockY);
+    if(lenis){ lenis.start(); }
+    else {
+      body.style.position = ''; body.style.top = ''; body.style.left = '';
+      body.style.right = ''; body.style.width = '';
+      window.scrollTo(0, lockY);
+    }
+    window.removeEventListener('wheel', preventScroll, wheelOpts);
+    window.removeEventListener('touchmove', preventScroll, wheelOpts);
   }
 
   document.getElementById('card-close').addEventListener('click', closeCard);
@@ -880,18 +936,19 @@
     clearTimeout(resizeT);
     resizeT = setTimeout(function(){
       setSpacer();
+      if(lenis) lenis.resize();
       layout();
       lastDrawn = -1;   // force redraw at new size
     }, 120);
   });
   window.addEventListener('orientationchange', function(){
-    setTimeout(function(){ setSpacer(); layout(); lastDrawn = -1; }, 250);
+    setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; }, 250);
   });
   // iOS/Android URL-bar show/hide fires visualViewport resize (not window resize)
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize', function(){
       clearTimeout(resizeT);
-      resizeT = setTimeout(function(){ setSpacer(); layout(); lastDrawn = -1; }, 120);
+      resizeT = setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; }, 120);
     });
   }
   // keyboard / reduced-motion shortcut straight to the interactive specimens
@@ -899,18 +956,29 @@
   if(skip){
     skip.addEventListener('click', function(ev){
       ev.preventDefault();
-      window.scrollTo({ top: SEQ, behavior: reduceMotion ? 'auto' : 'smooth' });
-      setTimeout(function(){ if(zoneEls[0]) zoneEls[0].focus(); }, reduceMotion ? 80 : 700);
+      var target = startHold() + SEQ + 4;
+      if(lenis){ lenis.scrollTo(target, { immediate: reduceMotion }); }
+      else { window.scrollTo({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' }); }
+      setTimeout(function(){ if(zoneEls[0]) zoneEls[0].focus(); }, reduceMotion ? 90 : 800);
     });
   }
 
   function setSpacer(){
-    spacer.style.height = (SEQ + window.innerHeight * 3) + 'px';
+    spacer.style.height = (startHold() + SEQ + viewH() * 3) + 'px';
   }
 
   /* ================= BOOT ========================================= */
+  function initSmooth(){
+    if(reduceMotion) return;                                  // reduced motion: native scroll, no smoothing
+    if(typeof Lenis === 'undefined' || !window.gsap) return;  // CDN unavailable -> graceful fallback
+    lenis = new Lenis({ lerp:0.12, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
+    window.__lenis = lenis;
+    gsap.ticker.add(function(time){ lenis.raf(time * 1000); renderTick(); });
+    gsap.ticker.lagSmoothing(0);
+  }
   setSpacer();
   sizeCanvas();
+  initSmooth();
   preload();
 
 })();
