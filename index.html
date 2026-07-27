@@ -345,6 +345,80 @@
     font-variant-numeric:tabular-nums;
   }
 
+  /* ================= CONTACT SECTION (glass over dark) ============= */
+  #contact{
+    position:relative; z-index:20;
+    min-height:100vh; min-height:100dvh;
+    display:flex; align-items:center; justify-content:center;
+    padding:12vh 20px calc(9vh + env(safe-area-inset-bottom));
+    color:var(--ink); overflow:hidden;
+    background:
+      radial-gradient(130% 90% at 50% 118%, rgba(26,79,214,.24), transparent 60%),
+      radial-gradient(120% 100% at 50% -10%, rgba(22,30,66,.45), transparent 55%),
+      #04060f;
+  }
+  /* faint microscope-slide grid echo */
+  #contact::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.6;
+    background-image:radial-gradient(rgba(130,160,255,.06) 1px, transparent 1.4px);
+    background-size:26px 26px;
+    -webkit-mask-image:radial-gradient(120% 85% at 50% 55%, #000 25%, transparent 78%);
+            mask-image:radial-gradient(120% 85% at 50% 55%, #000 25%, transparent 78%);
+  }
+  .contact-inner{ position:relative; width:min(560px,100%); text-align:center; }
+  .contact-kicker{ font-weight:400; letter-spacing:.42em; text-transform:uppercase; font-size:.6rem; color:var(--neon-bright); margin:0 0 1rem; }
+  .contact-title{ font-family:var(--font-display); font-weight:500; font-size:clamp(2.2rem,7vw,3.4rem); margin:0 0 1rem; }
+  .contact-lead{ font-weight:300; font-size:.95rem; line-height:1.7; color:var(--ink-dim); max-width:46ch; margin:0 auto 2.4rem; }
+
+  #contact-form{
+    text-align:left;
+    background:rgba(255,255,255,.055);
+    -webkit-backdrop-filter:blur(22px) saturate(140%); backdrop-filter:blur(22px) saturate(140%);
+    border:1px solid rgba(150,180,255,.18); border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+    padding:clamp(20px,4vw,32px);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    #contact-form{ background:rgba(16,22,44,.9); }
+  }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-weight:400; letter-spacing:.18em; text-transform:uppercase; font-size:.56rem; color:var(--ink-faint); margin-bottom:8px; }
+  .field input, .field textarea{
+    width:100%; font-family:inherit; font-size:15px; font-weight:300; color:#fff;
+    background:rgba(255,255,255,.05); border:1px solid rgba(150,180,255,.18);
+    border-radius:10px; padding:12px 14px; outline:none; resize:vertical;
+    transition:border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .field input:focus, .field textarea:focus{ border-color:var(--neon-bright); background:rgba(255,255,255,.08); box-shadow:0 0 0 3px rgba(26,79,214,.25); }
+  .send-btn{
+    width:100%; margin-top:6px; cursor:pointer;
+    font-weight:500; letter-spacing:.18em; text-transform:uppercase; font-size:.7rem; color:#fff;
+    background:linear-gradient(120deg, var(--neon), var(--neon-bright));
+    border:0; border-radius:10px; padding:14px 18px;
+    box-shadow:0 8px 24px rgba(26,79,214,.4);
+    transition:transform .2s var(--ease), box-shadow .2s var(--ease), opacity .2s;
+  }
+  .send-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 30px rgba(26,79,214,.55); }
+  .send-btn:active{ transform:translateY(0) scale(.99); }
+  .send-btn:disabled{ opacity:.6; cursor:default; }
+  #form-status{ min-height:1.2em; margin:14px 2px 0; font-size:.78rem; font-weight:300; }
+  #form-status.ok{ color:#7ce0a6; }
+  #form-status.err{ color:#ff9090; }
+
+  .contact-side{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px 22px; margin-top:2.2rem; }
+  .cv-btn{
+    display:inline-flex; align-items:center; text-decoration:none;
+    font-weight:500; letter-spacing:.16em; text-transform:uppercase; font-size:.64rem; color:#fff;
+    padding:11px 22px; border-radius:999px;
+    border:1px solid rgba(150,180,255,.5); background:rgba(120,160,255,.08);
+    transition:background .25s var(--ease), border-color .25s var(--ease), transform .2s var(--ease);
+  }
+  .cv-btn:hover{ background:rgba(120,160,255,.16); border-color:var(--neon-bright); transform:translateY(-1px); }
+  .contact-link{ color:var(--ink-dim); text-decoration:none; font-size:.8rem; font-weight:300; border-bottom:1px solid transparent; transition:color .25s, border-color .25s; }
+  .contact-link:hover{ color:#fff; border-color:rgba(150,180,255,.5); }
+  .contact-foot{ margin-top:3rem; font-size:.6rem; font-weight:300; letter-spacing:.3em; text-transform:uppercase; color:var(--ink-faint); }
+  @media (max-width:480px){ .contact-side{ flex-direction:column; gap:14px; } }
+
   /* ================= ACCESSIBLE / NO-JS FALLBACK =================== */
   .skip{
     position:fixed; top:12px; left:12px; z-index:300;
@@ -396,6 +470,35 @@
 
   <!-- Scrollable height driver -->
   <div id="spacer" aria-hidden="true"></div>
+
+  <!-- Contact section — scrolls up over the frozen slide, its own dark background -->
+  <section id="contact">
+    <div class="contact-inner">
+      <p class="contact-kicker">Get in touch</p>
+      <h2 class="contact-title">Let&rsquo;s talk.</h2>
+      <p class="contact-lead">Research, opportunities, or a question about the work — leave a note and it lands straight in Sebastien&rsquo;s inbox.</p>
+
+      <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+        <!-- Replace with a free key from https://web3forms.com (use Sebastien's email) -->
+        <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
+        <input type="hidden" name="subject" value="New message from your portfolio" />
+        <input type="hidden" name="from_name" value="Sebastien Church — Portfolio" />
+        <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none" />
+        <div class="field"><label for="cf-name">Name</label><input id="cf-name" name="name" type="text" required autocomplete="name" /></div>
+        <div class="field"><label for="cf-email">Email</label><input id="cf-email" name="email" type="email" required autocomplete="email" /></div>
+        <div class="field"><label for="cf-msg">Message</label><textarea id="cf-msg" name="message" rows="4" required></textarea></div>
+        <button type="submit" class="send-btn">Send message</button>
+        <p id="form-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="contact-side">
+        <a class="cv-btn" href="Sebastien-Church-CV.pdf" download>Download CV</a>
+        <a class="contact-link" href="mailto:sebastienchurch@cmail.carleton.ca">sebastienchurch@cmail.carleton.ca</a>
+        <a class="contact-link" href="https://www.linkedin.com/in/sebastien-church-08a0212a9" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+      <p class="contact-foot">Sebastien Church · Neuroscience &amp; Mental Health · Ottawa</p>
+    </div>
+  </section>
 
   <!-- Cinematic frame canvas -->
   <canvas id="scene" role="img"
@@ -1045,8 +1148,49 @@
     (function loop(){ cx+=(tx-cx)*0.22; cy+=(ty-cy)*0.22; cur.style.transform='translate('+cx+'px,'+cy+'px)'; requestAnimationFrame(loop); })();
   })();
 
+  // contact form (Web3Forms) + reveal on scroll
+  (function initContact(){
+    var form = document.getElementById('contact-form');
+    if(form){
+      var status = document.getElementById('form-status');
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var btn = form.querySelector('button[type=submit]');
+        var data = Object.fromEntries(new FormData(form).entries());
+        if(!data.access_key || data.access_key === 'YOUR_WEB3FORMS_ACCESS_KEY'){
+          status.className='err'; status.textContent='Contact form isn’t configured yet — add a Web3Forms access key.';
+          return;
+        }
+        status.className=''; status.textContent='Sending…'; btn.disabled=true;
+        fetch('https://api.web3forms.com/submit', {
+          method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body: JSON.stringify(data)
+        }).then(function(r){ return r.json(); }).then(function(res){
+          if(res.success){ status.className='ok'; status.textContent='Message sent — thank you.'; form.reset(); }
+          else { status.className='err'; status.textContent=res.message || 'Something went wrong. Please try again.'; }
+          btn.disabled=false;
+        }).catch(function(){ status.className='err'; status.textContent='Network error — please try again.'; btn.disabled=false; });
+      });
+    }
+    var section = document.getElementById('contact');
+    if(section && 'IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        for(var k=0;k<entries.length;k++){
+          if(entries[k].isIntersecting){
+            io.disconnect();
+            if(window.gsap && !reduceMotion){
+              gsap.from('#contact .contact-inner > *', { opacity:0, y:26, duration:0.7, ease:'expo.out', stagger:0.08 });
+            }
+            break;
+          }
+        }
+      }, { threshold:0.18 });
+      io.observe(section);
+    }
+  })();
+
   function setSpacer(){
-    spacer.style.height = (startHold() + SEQ + viewH() * 3) + 'px';
+    spacer.style.height = (startHold() + SEQ + viewH() * 2) + 'px';
   }
 
   /* ================= BOOT ========================================= */
