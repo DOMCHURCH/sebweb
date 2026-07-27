@@ -7,22 +7,22 @@ through the eyepiece, and lands on a slide of five specimens. Each specimen is a
 interactive hotspot that opens a glassmorphic card — Research, Field Experience,
 Education, Volunteering, and Certifications.
 
-Single file, no frameworks, no runtime dependencies (`index.html`). The only
-external resource is Google Fonts (Playfair Display + Jost).
+Single file (`index.html`). Smooth scroll + animation via **Lenis + GSAP** (CDN,
+with a native-scroll fallback); type is Google Fonts (Playfair Display + Jost).
 
 ## Structure
 
 ```
-index.html            The entire site (HTML + CSS + JS, scroll engine, overlay, cards)
-extract.sh            Rebuilds the frame sequences from the source videos
-video1.mp4            210 frames — title card → microscope
-video2.mp4            300 frames — eyepiece → specimen slide
-frames/desktop/       f0000.webp … f0509.webp  (1600px, loaded on desktop/tablet)
-frames/mobile/        f0000.webp … f0509.webp  ( 900px, loaded on phones)
+index.html                     The entire site (HTML + CSS + JS, scroll engine, overlay, cards)
+extract.sh                     Rebuilds both frame tiers from the source videos
+video1.mp4 / video2.mp4        landscape 16:9 source (title → microscope → slide)
+portrait1.mp4 / portrait2.mp4  portrait 9:16 source (same beats, framed for phones)
+frames/desktop/                f0000.webp … f0509.webp  (1600px 16:9 — landscape viewports)
+frames/portrait/               f0000.webp … f0509.webp  (1000px 9:16 — portrait viewports)
 ```
 
-Frames are numbered globally 0–509 (video1 = 0–209, video2 = 210–509) at 8 px of
-scroll per frame.
+In each tier, frames are numbered globally 0–509 (clip 1 = 0–209, clip 2 = 210–509)
+at 8 px of scroll per frame. index.html picks the tier by viewport aspect ratio.
 
 ## Develop / preview locally
 
@@ -48,12 +48,12 @@ REALESRGAN=/path/to/realesrgan-ncnn-vulkan bash extract.sh
 ## Deploy
 
 Static — deploy the repo as-is (e.g. Vercel: no build command, output = repo root).
-`frames/desktop` + `frames/mobile` total ~24 MB and are committed so no build step
-is required at deploy time.
+`frames/desktop` (~19 MB) + `frames/portrait` (~22 MB) are committed so no build
+step is required at deploy time.
 
 ## Accessibility & performance
 
 - Full text version of every section is present for screen readers / no-JS / SEO.
 - `prefers-reduced-motion` snaps frames instead of easing.
-- Responsive frame tiers keep the payload light and scrubbing smooth on phones.
+- Aspect-based tiers: 16:9 for landscape, 9:16 for portrait phones (no title crop).
 - Touch targets ≥ 44px; card is a focus-trapped `dialog` (Esc / arrow keys).

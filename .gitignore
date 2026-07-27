@@ -9,7 +9,7 @@ frames/video2/
 
 # Keep the web-ready frame tiers that index.html actually loads
 !frames/desktop/
-!frames/mobile/
+!frames/portrait/
 
 # OS / editor cruft
 .DS_Store

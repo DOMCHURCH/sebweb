@@ -1,61 +1,58 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  extract.sh — build the scroll-scrub frame sequences for the portfolio.
+#  extract.sh — build the scroll-scrub frame sequences (both tiers).
 #
-#  Pipeline:
-#    1. Extract every frame of video1.mp4 (210) and video2.mp4 (300) at 30fps.
-#    2. Upscale each frame 4x with Real-ESRGAN (genuine detail recovery).
-#    3. Downscale + sharpen + encode to WebP in two responsive tiers:
-#         frames/desktop/  (1600px, high quality)  <- index.html loads these
-#         frames/mobile/   ( 900px, lighter)
-#       Frames are numbered globally 0..509 (video1 = 0..209, video2 = 210..509).
+#    Landscape 16:9  -> frames/desktop   (video1.mp4    + video2.mp4,    1600px)
+#    Portrait  9:16   -> frames/portrait  (portrait1.mp4 + portrait2.mp4, 1000px)
 #
-#  Requirements: ffmpeg, ffprobe, and Real-ESRGAN (realesrgan-ncnn-vulkan).
-#  If Real-ESRGAN is not found, step 2 is skipped and the WebP tiers are
-#  encoded straight from the native frames (still crisp — source is ~1924px).
+#  index.html picks the tier by viewport aspect ratio (portrait viewports get
+#  the 9:16 set so the title isn't cropped; wider ones get the 16:9 set).
 #
-#  Usage:   bash extract.sh
-#  Override the upscaler path:  REALESRGAN=/path/to/realesrgan-ncnn-vulkan bash extract.sh
+#  Each tier: extract every frame at 30fps, optionally upscale 4x with
+#  Real-ESRGAN, then downscale + sharpen + encode to WebP. Frames are numbered
+#  globally 0..509 (clip 1 = 0..209, clip 2 = 210..509).
+#
+#  Requires ffmpeg. Real-ESRGAN (realesrgan-ncnn-vulkan) is optional — without
+#  it, frames are encoded from the native source (still crisp).
+#
+#  Usage:  bash extract.sh
+#          REALESRGAN=/path/to/realesrgan-ncnn-vulkan bash extract.sh
 # ============================================================================
 set -euo pipefail
 
-# ---- config ----------------------------------------------------------------
 REALESRGAN="${REALESRGAN:-/c/Users/Dominique/Downloads/oa_work/realesrgan/realesrgan-ncnn-vulkan.exe}"
-MODEL="realesrgan-x4plus"     # photographic 4x model
-DESKTOP_W=1600
-MOBILE_W=900
-N1=210                        # number of frames in video1 (global offset for video2)
-# ---------------------------------------------------------------------------
+MODEL="realesrgan-x4plus"
+N1=210   # frames in clip 1 (global offset for clip 2)
 
-mkdir -p frames/video1 frames/video2 frames/desktop frames/mobile
+# build_tier <out-dir> <width> <clip1.mp4> <clip2.mp4> <unsharp-params>
+build_tier(){
+  local out="$1" w="$2" v1="$3" v2="$4" sharp="$5"
+  local raw1="frames/_raw/${out}_1" raw2="frames/_raw/${out}_2"
+  mkdir -p "$raw1" "$raw2" "frames/$out"
 
-echo "[1/4] Extracting frames at 30fps..."
-ffmpeg -v error -y -i video1.mp4 -vf fps=30 -q:v 1 frames/video1/frame%04d.png
-ffmpeg -v error -y -i video2.mp4 -vf fps=30 -q:v 1 frames/video2/frame%04d.png
+  echo "[$out] extracting frames at 30fps..."
+  ffmpeg -v error -y -i "$v1" -vf fps=30 -q:v 1 "$raw1/frame%04d.png"
+  ffmpeg -v error -y -i "$v2" -vf fps=30 -q:v 1 "$raw2/frame%04d.png"
 
-SRC1="frames/video1"          # source dir for the encode step (raw by default)
-SRC2="frames/video2"
+  local s1="$raw1" s2="$raw2"
+  if [ -x "$REALESRGAN" ]; then
+    echo "[$out] upscaling 4x with Real-ESRGAN ($MODEL)..."
+    mkdir -p "${raw1}_up" "${raw2}_up"
+    "$REALESRGAN" -i "$raw1" -o "${raw1}_up" -n "$MODEL" -f png
+    "$REALESRGAN" -i "$raw2" -o "${raw2}_up" -n "$MODEL" -f png
+    s1="${raw1}_up"; s2="${raw2}_up"
+  else
+    echo "[$out] Real-ESRGAN not found — encoding from native frames."
+  fi
 
-if [ -x "$REALESRGAN" ] || command -v "$REALESRGAN" >/dev/null 2>&1; then
-  echo "[2/4] Upscaling 4x with Real-ESRGAN ($MODEL)... (this is the slow step)"
-  mkdir -p frames/video1/upscaled frames/video2/upscaled
-  "$REALESRGAN" -i frames/video1 -o frames/video1/upscaled -n "$MODEL" -f png
-  "$REALESRGAN" -i frames/video2 -o frames/video2/upscaled -n "$MODEL" -f png
-  SRC1="frames/video1/upscaled"
-  SRC2="frames/video2/upscaled"
-else
-  echo "[2/4] Real-ESRGAN not found at '$REALESRGAN' — encoding from native frames."
-fi
+  local vf="scale=${w}:-2:flags=lanczos,unsharp=${sharp}"
+  echo "[$out] encoding WebP (${w}px)..."
+  ffmpeg -v error -y -i "$s1/frame%04d.png" -vf "$vf" -c:v libwebp -quality 90 -compression_level 6 -preset picture -start_number 0   "frames/$out/f%04d.webp"
+  ffmpeg -v error -y -i "$s2/frame%04d.png" -vf "$vf" -c:v libwebp -quality 90 -compression_level 6 -preset picture -start_number $N1 "frames/$out/f%04d.webp"
+  echo "[$out] done: $(ls "frames/$out" | wc -l) frames (expected 510)"
+}
 
-DVF="scale=${DESKTOP_W}:-2:flags=lanczos,unsharp=5:5:0.4:5:5:0.0"
-MVF="scale=${MOBILE_W}:-2:flags=lanczos,unsharp=5:5:0.5:5:5:0.0"
+build_tier desktop  1600 video1.mp4    video2.mp4    "5:5:0.4:5:5:0.0"
+build_tier portrait 1000 portrait1.mp4 portrait2.mp4 "5:5:0.5:5:5:0.0"
 
-echo "[3/4] Encoding DESKTOP tier (${DESKTOP_W}px)..."
-ffmpeg -v error -y -i "$SRC1/frame%04d.png" -vf "$DVF" -c:v libwebp -quality 88 -compression_level 6 -preset picture -start_number 0    frames/desktop/f%04d.webp
-ffmpeg -v error -y -i "$SRC2/frame%04d.png" -vf "$DVF" -c:v libwebp -quality 88 -compression_level 6 -preset picture -start_number $N1  frames/desktop/f%04d.webp
-
-echo "[4/4] Encoding MOBILE tier (${MOBILE_W}px)..."
-ffmpeg -v error -y -i "$SRC1/frame%04d.png" -vf "$MVF" -c:v libwebp -quality 84 -compression_level 6 -preset picture -start_number 0    frames/mobile/f%04d.webp
-ffmpeg -v error -y -i "$SRC2/frame%04d.png" -vf "$MVF" -c:v libwebp -quality 84 -compression_level 6 -preset picture -start_number $N1  frames/mobile/f%04d.webp
-
-echo "Done. desktop=$(ls frames/desktop | wc -l) mobile=$(ls frames/mobile | wc -l) (expected 510 each)"
+echo "All tiers built."

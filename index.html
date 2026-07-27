@@ -446,10 +446,11 @@
   var SEQ = TOTAL * PPF;              // 4080  (scroll range that scrubs frames)
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var mobileTier   = window.matchMedia('(max-width: 768px)').matches
-                     || (navigator.connection && navigator.connection.saveData
-                         && window.matchMedia('(max-width: 1024px)').matches);
-  var TIER = mobileTier ? 'mobile' : 'desktop';
+  // Portrait / narrow viewports load the 9:16 clips; wider ones get the 16:9 set.
+  // (aspect ratio <= 1 -> portrait orientation.)
+  var portraitTier = window.matchMedia('(max-aspect-ratio: 1/1)').matches;
+  var TIER = portraitTier ? 'portrait' : 'desktop';
+  window.__tier = TIER;
 
   /* ---------- Specimen + annotation map (percent of the FRAME) --------
      Positions tuned to the actual last frame of video2. bx/by is where the
@@ -457,20 +458,25 @@
   // Desktop leaders (bx/by = % of frame, outside the circle).
   // Mobile leaders (mvx/mvy = fraction of VIEWPORT — labels live in the
   // black bands above/below the circle, since the circle fills the width).
-  var ANNOT = [
-    { key:'research', label:'Research &amp; Lab',            sx:49, sy:48, bx:16, by:49, dir:'left',
-      mvx:0.50, mvy:0.15, mdir:'center' },
-    { key:'field',    label:'Field Experience',          sx:42, sy:34, bx:21, by:19, dir:'left',
-      mvx:0.05, mvy:0.10, mdir:'right' },
-    { key:'education',label:'Education',                 sx:58, sy:35, bx:79, by:19, dir:'right',
-      mvx:0.95, mvy:0.10, mdir:'left' },
-    { key:'volunteer',label:'Volunteering',              sx:42, sy:60, bx:21, by:80, dir:'left',
-      mvx:0.05, mvy:0.89, mdir:'right' },
-    { key:'certs',    label:'Certifications &amp; Skills',   sx:59, sy:58, bx:79, by:80, dir:'right',
-      mvx:0.95, mvy:0.89, mdir:'left' }
+  // Desktop (16:9): leader lines outside the circle (bx/by + dir).
+  var ANNOT_DESKTOP = [
+    { key:'research', label:'Research &amp; Lab',            sx:49, sy:48, bx:16, by:49, dir:'left' },
+    { key:'field',    label:'Field Experience',          sx:42, sy:34, bx:21, by:19, dir:'left' },
+    { key:'education',label:'Education',                 sx:58, sy:35, bx:79, by:19, dir:'right' },
+    { key:'volunteer',label:'Volunteering',              sx:42, sy:60, bx:21, by:80, dir:'left' },
+    { key:'certs',    label:'Certifications &amp; Skills',   sx:59, sy:58, bx:79, by:80, dir:'right' }
   ];
-  // circle (pink field) geometry, percent of frame
-  var RING = { cx:49, cy:48, r:13.8 };  // r is % of frame WIDTH
+  // Portrait (9:16): labels stacked in the top/bottom black bands (mvx/mvy viewport fractions).
+  var ANNOT_PORTRAIT = [
+    { key:'research', label:'Research &amp; Lab',            sx:50, sy:45, mvx:0.50, mvy:0.13, mdir:'center' },
+    { key:'field',    label:'Field Experience',          sx:37, sy:37, mvx:0.06, mvy:0.10, mdir:'right' },
+    { key:'education',label:'Education',                 sx:66, sy:35, mvx:0.94, mvy:0.10, mdir:'left' },
+    { key:'volunteer',label:'Volunteering',              sx:37, sy:54, mvx:0.06, mvy:0.90, mdir:'right' },
+    { key:'certs',    label:'Certifications &amp; Skills',   sx:67, sy:52, mvx:0.94, mvy:0.90, mdir:'left' }
+  ];
+  var ANNOT = portraitTier ? ANNOT_PORTRAIT : ANNOT_DESKTOP;
+  // circle (pink field) geometry, percent of frame WIDTH
+  var RING = portraitTier ? { cx:50, cy:45, r:34 } : { cx:49, cy:48, r:13.8 };
 
   /* ---------- Card content (clockwise 1 -> 5) ----------------------- */
   var CARDS = [
@@ -540,8 +546,8 @@
   var ready = false;
   var targetFrame = 0, renderFrame = 0, lastDrawn = -1;
   var coverRect = { x:0, y:0, w:0, h:0 };
-  var frameW = TIER === 'mobile' ? 900 : 1600;   // fallback until first img loads
-  var frameH = TIER === 'mobile' ? 502 : 894;
+  var frameW = portraitTier ? 1000 : 1600;   // fallback until first img loads
+  var frameH = portraitTier ? 1776 : 894;
   var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   var overlayActive = false;
   var cardOpen = false;
@@ -703,7 +709,7 @@
     ring.style.top = (RING.cy/100*H - rpx) + 'px';
 
     var vw = viewW(), vh = viewH();
-    var narrow = vw <= 768;
+    var narrow = (TIER === 'portrait');   // portrait tier uses the band layout
 
     for(var i=0;i<ANNOT.length;i++){
       var a = ANNOT[i];
