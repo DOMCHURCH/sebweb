@@ -599,6 +599,16 @@
     canvas.classList.add('ready');
     layout();
     draw(0);
+    // restore scroll position after an orientation-flip reload
+    try {
+      var sf = sessionStorage.getItem('sebFrame');
+      if(sf !== null){
+        sessionStorage.removeItem('sebFrame');
+        var yy = startHold() + Math.min(parseInt(sf, 10) || 0, LAST) * PPF;
+        if(lenis){ lenis.scrollTo(yy, { immediate:true }); } else { window.scrollTo(0, yy); }
+        if(parseInt(sf,10) > 2){ hintShown = true; }
+      }
+    } catch(e){}
     // reveal scroll hint shortly after
     setTimeout(function(){ if(!hintShown){ hint.classList.add('show'); } }, 700);
     // Lenis drives renderTick via the GSAP ticker; otherwise use a plain rAF loop
@@ -957,6 +967,18 @@
       resizeT = setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; }, 120);
     });
   }
+  // Orientation flip -> the OTHER frame tier fits better, so reload into it and
+  // restore the scroll position. (You can't reliably lock orientation on the
+  // web: the Screen Orientation lock API needs fullscreen and iOS Safari does
+  // not support it — so we adapt instead of fighting the browser.)
+  var portraitMQ = window.matchMedia('(max-aspect-ratio: 1/1)');
+  function onFlip(e){
+    if(e.matches === portraitTier) return;           // current tier already correct
+    try { sessionStorage.setItem('sebFrame', targetFrame); } catch(err){}
+    location.reload();
+  }
+  if(portraitMQ.addEventListener){ portraitMQ.addEventListener('change', onFlip); }
+  else if(portraitMQ.addListener){ portraitMQ.addListener(onFlip); }   // older Safari
   // keyboard / reduced-motion shortcut straight to the interactive specimens
   var skip = document.getElementById('skip');
   if(skip){
