@@ -15,6 +15,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
 <style>
@@ -85,6 +86,24 @@
     opacity:0; transition:opacity 900ms var(--ease);
   }
   #scene.ready ~ #vignette{ opacity:1; }
+
+  /* ================= CUSTOM CURSOR (fine pointer only) ============= */
+  #cursor{
+    position:fixed; top:0; left:0; z-index:400; pointer-events:none;
+    width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%;
+    border:1.5px solid rgba(150,180,255,.8);
+    box-shadow:0 0 14px rgba(26,79,214,.55);
+    opacity:0;
+    transition:width .3s var(--ease), height .3s var(--ease), margin .3s var(--ease),
+               background .3s var(--ease), border-color .3s var(--ease), opacity .35s var(--ease);
+    will-change:transform;
+  }
+  #cursor.on{ opacity:1; }
+  #cursor.big{ width:64px; height:64px; margin:-32px 0 0 -32px;
+    background:rgba(120,160,255,.12); border-color:rgba(185,208,255,.95); }
+  html.has-cursor, html.has-cursor *{ cursor:none; }
+  html.has-cursor input, html.has-cursor textarea, html.has-cursor select{ cursor:auto; }
+  @media (hover:none),(pointer:coarse){ #cursor{ display:none!important; } }
 
   /* ================= LOADING SCREEN ================================= */
   #loader{
@@ -174,15 +193,17 @@
   }
 
   #wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
-  .arrow-line{ stroke:var(--neon); stroke-width:1.5; fill:none; opacity:.9;
+  .arrow-line{ stroke:var(--neon); stroke-width:1; fill:none; opacity:.5; stroke-linecap:round;
     transition:stroke var(--dur) var(--ease), opacity var(--dur) var(--ease); }
-  .arrow-head{ fill:var(--neon); opacity:.95;
-    transition:fill var(--dur) var(--ease), opacity var(--dur) var(--ease); }
-  .arrow-dot{ fill:var(--neon-bright); }
-  .arrow{ filter:drop-shadow(0 0 6px var(--neon)); transition:filter var(--dur) var(--ease); }
-  .arrow.hot{ filter:drop-shadow(0 0 12px var(--neon)); }
-  .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:1; }
-  .arrow.hot .arrow-head{ fill:var(--neon-bright); opacity:1; }
+  .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.5; opacity:.8;
+    transition:stroke var(--dur) var(--ease), opacity var(--dur) var(--ease), stroke-width var(--dur) var(--ease);
+    animation:reticle 3.4s ease-in-out infinite; }
+  .arrow-dot{ fill:var(--neon-bright); opacity:.85; }
+  .arrow{ filter:drop-shadow(0 0 4px var(--neon-glow)); transition:filter var(--dur) var(--ease); }
+  .arrow.hot{ filter:drop-shadow(0 0 10px var(--neon)); }
+  .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:.9; }
+  .arrow.hot .arrow-ring{ stroke:var(--neon-bright); opacity:1; stroke-width:2; animation:none; }
+  @keyframes reticle{ 0%,100%{ opacity:.5 } 50%{ opacity:.9 } }
 
   .label{
     position:absolute; pointer-events:none;
@@ -364,12 +385,14 @@
     }
     #hint .rail::after{ animation:none; }
     #overlay.active #prompt{ animation:none; }
+    .arrow-ring{ animation:none !important; }
   }
 </style>
 </head>
 <body class="is-loading">
 
   <a href="#" id="skip" class="skip">Skip to portfolio</a>
+  <div id="cursor" aria-hidden="true"></div>
 
   <!-- Scrollable height driver -->
   <div id="spacer" aria-hidden="true"></div>
@@ -418,11 +441,11 @@
   <!-- Accessible, always-present text version of the content (SR + SEO) -->
   <main class="sr-only" id="a11y-content">
     <h1>Sebastien Church — Neuroscience &amp; Mental Health</h1>
-    <section><h2>Research &amp; Lab</h2><p>Lab Assistant at Carleton University. Cell quantification for a PhD thesis investigating Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training. Computer-assisted microscope analysis using Stereo Investigator. c-Fos quantification in defined brain regions. Tools: RStudio, Stereo Investigator.</p></section>
-    <section><h2>Field Experience</h2><p>Reserves Combat Medic in Training, Canadian Armed Forces (April 2026 – Present). Student First Responder and Social Coordinator, CUSERT (September 2024 – Present) — first line of response to medical emergencies, administering first aid, triaging patient needs, and supporting handoff to City of Ottawa emergency services. Summer Research Student, CMHA (April 2024 – September 2025) — DEI database research, contributed to the CMHA DEI report (November 2024).</p></section>
-    <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, Carleton University (2023 – 2027). Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023). Student council Grade 10 representative and Minister of Sports. Competitive track and field, cross country, and badminton. OFSAA qualifier, top 10 Ontario doubles.</p></section>
-    <section><h2>Volunteering</h2><p>Medicine4Youth VP Marketing, Carleton University Chapter (September 2025 – Present) — managing sponsor relationships, coordinating events, and developing partnerships with university clubs. Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – November 2023). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camps des Faucons (July 2019 – August 2021).</p></section>
-    <section><h2>Certifications &amp; Skills</h2><p>First Responder — Canadian Red Cross (October 2024 – October 2027). Mental Health First Aid — Mental Health Commission of Canada (January 2025). Standard First Aid and CPR/AED Level C — Canadian Red Cross (November 2022). Fluently bilingual English and French. Skills: Laboratory Skills, RStudio, Stereo Investigator, Stakeholder Management, Scholarly Research, Analytical Skills, First Aid Training, Leadership.</p></section>
+    <section><h2>Research &amp; Lab</h2><p>Laboratory Assistant, Carleton University Neuroscience Lab (May 2025 – Present) — supporting a PhD thesis on Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training; computer-assisted microscopy and c-Fos quantification in defined brain regions using Stereo Investigator. Summer Student Researcher, Canadian Mental Health Association Ottawa (2024 and 2025) — Diversity, Equity and Inclusion research under Dr. Maryann Roebuck and Dr. Konrad Czechowski, and scoping resources for an updated incident-management platform.</p></section>
+    <section><h2>Field Experience</h2><p>Reserve Combat Medic in Training, Canadian Armed Forces (April 2026 – Present) — initial care and lifesaving interventions for trauma casualties in the field and in clinics. Emergency Responder, Carleton University Student Emergency Response Team, CUSERT (September 2024 – Present).</p></section>
+    <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, with a minor in Forensic Psychology, Carleton University (Class of 2027). Entrance Scholarship recipient; former Carleton Ravens Track and Field / Cross Country athlete. Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023); student council Grade 10 representative and Minister of Sports; badminton OFSAA qualifier, top 10 in Ontario for doubles.</p></section>
+    <section><h2>Volunteering</h2><p>Vice President Marketing, Medicine4Youth Carleton Chapter (September 2025 – Present). Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – September 2025). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camp des Faucons (July 2019 – August 2021).</p></section>
+    <section><h2>Certifications &amp; Skills</h2><p>Emergency Medical Responder, Canadian Armed Forces (expires June 2029). First Responder, Canadian Red Cross (expires October 2027). Standard First Aid and CPR/AED Level C, Canadian Red Cross (expires November 2028). Mental Health First Aid, Mental Health Commission of Canada (January 2025). WHMIS. Fluently bilingual French and English. Skills: leadership, team coordination, communication, data analysis, community development, R Studio, Microsoft Office.</p></section>
   </main>
 
   <noscript>
@@ -482,45 +505,51 @@
   var CARDS = [
     { key:'research', kicker:'01 — Specimen', title:'Research &amp; Lab', img:'',
       entries:[
-        {role:'Lab Assistant', org:'Carleton University', date:'',
-         desc:'Cell quantification for a PhD thesis investigating Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training. Computer-assisted microscope analysis with Stereo Investigator; c-Fos quantification in defined brain regions.'}
+        {role:'Laboratory Assistant', org:'Carleton University — Neuroscience Lab', date:'May 2025 — Present',
+         desc:'Supporting a PhD thesis on Unreinforced Spatial Learning &amp; Memory in Rats (Massed vs. Spaced Training). Computer-assisted microscopy and c-Fos quantification across defined brain regions, marking and counting cells in Stereo Investigator.'},
+        {role:'Summer Student Researcher', org:'Canadian Mental Health Association — Ottawa', date:'2024 &amp; 2025',
+         desc:'Diversity, Equity &amp; Inclusion research in mental-health service delivery under Dr. Maryann Roebuck &amp; Dr. Konrad Czechowski (2024); scoped resources for an updated incident-management platform (2025).'}
       ],
-      tags:['RStudio','Stereo Investigator'] },
+      tags:['Stereo Investigator','c-Fos quantification','Immunohistochemistry','EEG','DNA / PCR','RStudio'] },
 
     { key:'field', kicker:'02 — Specimen', title:'Field Experience', img:'',
       entries:[
-        {role:'Reserves Combat Medic in Training', org:'Canadian Armed Forces', date:'Apr 2026 — Present', desc:''},
-        {role:'Student First Responder & Social Coordinator', org:'CUSERT', date:'Sep 2024 — Present',
-         desc:'First line of response to medical emergencies — administering first aid, triaging patient needs, and supporting handoff to City of Ottawa emergency services.'},
-        {role:'Summer Research Student', org:'CMHA', date:'Apr 2024 — Sep 2025',
-         desc:'Conducted DEI database research; contributed to the CMHA DEI report (November 2024).'}
+        {role:'Reserve Combat Medic in Training', org:'Canadian Armed Forces', date:'Apr 2026 — Present',
+         desc:'Training to deliver initial care and lifesaving interventions to trauma casualties in the field and in clinics, alongside Medical Officers, Physician Assistants, Nursing Officers and Paramedics.'},
+        {role:'Emergency Responder', org:'Carleton Student Emergency Response Team (CUSERT)', date:'Sep 2024 — Present',
+         desc:'Volunteer member of the student-run campus emergency response team serving the Carleton University community.'}
       ], tags:[] },
 
     { key:'education', kicker:'03 — Specimen', title:'Education', img:'',
       entries:[
-        {role:'B.Sc. Neuroscience & Mental Health (Honours)', org:'Carleton University', date:'2023 — 2027', desc:''},
-        {role:'OSSD with Honours', org:'École Secondaire Catholique Franco-Cité', date:'2019 — 2023',
-         desc:'Student council Grade 10 representative & Minister of Sports. Competitive track & field, cross country, and badminton — OFSAA qualifier, top-10 Ontario doubles.'}
+        {role:'B.Sc. Neuroscience &amp; Mental Health (Honours)', org:'Carleton University · Minor in Forensic Psychology', date:'Class of 2027',
+         desc:'Entrance Scholarship recipient (Carleton, B.Sc. Entrance, and Scholarship Partners Canada). Former competitive athlete — Carleton Ravens Track &amp; Field / Cross Country.'},
+        {role:'OSSD, Honours', org:'École Secondaire Catholique Franco-Cité', date:'2019 — 2023',
+         desc:'Student council — Grade 10 representative (2021), Minister of Sports (2022). Track &amp; field, cross country, and badminton — OFSAA qualifier, top-10 in Ontario for doubles.'}
       ], tags:[] },
 
     { key:'volunteer', kicker:'04 — Specimen', title:'Volunteering', img:'',
       entries:[
         {role:'VP Marketing', org:'Medicine4Youth — Carleton Chapter', date:'Sep 2025 — Present',
-         desc:'Managing sponsor relationships, coordinating events, and developing partnerships with university clubs.'},
-        {role:'Assistant Track & Field Coach', org:'Grasshopper Hill Run Club', date:'Sep 2022 — Nov 2023', desc:''},
+         desc:'Managing sponsor relationships, coordinating events through stakeholder communication, and developing partnerships with other university clubs.'},
+        {role:'Assistant Track &amp; Field Coach', org:'Grasshopper Hill Run Club', date:'Sep 2022 — Sep 2025',
+         desc:'Youth coach for a community-oriented run club focused on fun, inclusion and fundamental movement skills; designed and ran weekly games and activities for mixed ages.'},
         {role:'Student Volunteer', org:'RA Centre, Ottawa', date:'Jul 2019 — Aug 2023',
-         desc:'Led badminton camps for groups of 20–30 children.'},
-        {role:'Summer Camp Counsellor', org:'Camps des Faucons', date:'Jul 2019 — Aug 2021', desc:''}
+         desc:'Counsellor and coach for youth badminton camps, leading programming for groups of 20–30 children.'},
+        {role:'Summer Camp Counsellor', org:'Camp des Faucons — Jeunesse Franco-Forme', date:'Jul 2019 — Aug 2021',
+         desc:'Organized games and sports activities in French for children of all ages in an inclusive environment.'}
       ], tags:[] },
 
     { key:'certs', kicker:'05 — Specimen', title:'Certifications &amp; Skills', img:'',
       entries:[
-        {role:'First Responder', org:'Canadian Red Cross', date:'Oct 2024 — Oct 2027', desc:''},
-        {role:'Mental Health First Aid', org:'Mental Health Commission of Canada', date:'Jan 2025', desc:''},
-        {role:'Standard First Aid & CPR/AED Level C', org:'Canadian Red Cross', date:'Nov 2022', desc:''}
+        {role:'Emergency Medical Responder', org:'Canadian Armed Forces', date:'Exp. Jun 2029', desc:''},
+        {role:'First Responder', org:'Canadian Red Cross', date:'Exp. Oct 2027', desc:''},
+        {role:'Standard First Aid &amp; CPR/AED Level C', org:'Canadian Red Cross', date:'Exp. Nov 2028', desc:''},
+        {role:'Mental Health First Aid', org:'Mental Health Commission of Canada', date:'Issued Jan 2025', desc:''},
+        {role:'WHMIS', org:'Workplace Hazardous Materials Information System', date:'', desc:''}
       ],
-      text:'Fluently bilingual — English & French.',
-      tags:['Laboratory Skills','RStudio','Stereo Investigator','Stakeholder Management','Scholarly Research','Analytical Skills','First Aid','Leadership'] }
+      text:'Fluently bilingual — French &amp; English.',
+      tags:['Leadership','Team Coordination','Communication','Data Analysis','Community Development','R Studio','Microsoft Office'] }
   ];
 
   /* ---------- Elements --------------------------------------------- */
@@ -543,6 +572,7 @@
   /* ---------- State ------------------------------------------------- */
   var images = new Array(TOTAL);
   var loaded = 0;
+  var maxReady = -1;                    // highest contiguously-loaded frame index
   var ready = false;
   var targetFrame = 0, renderFrame = 0, lastDrawn = -1;
   var coverRect = { x:0, y:0, w:0, h:0 };
@@ -569,9 +599,18 @@
   /* ================= PRELOAD ======================================= */
   function preload(){
     var CONC = 12, next = 0, done = 0, active = 0;
+    var REVEAL = 12;                          // buffer this many frames, then reveal
+    function advanceReady(){
+      while(maxReady + 1 < TOTAL){
+        var nx = images[maxReady + 1];
+        if(nx && nx.complete && nx.naturalWidth){ maxReady++; } else break;
+      }
+      if(!ready && (maxReady + 1 >= REVEAL || done >= TOTAL)) reveal();
+    }
     function bump(){
       loaded++;
-      var pct = Math.round(loaded / TOTAL * 100);
+      // the splash bar fills toward the reveal buffer (not all 510) so it feels fast
+      var pct = Math.min(100, Math.round(loaded / REVEAL * 100));
       loaderBar.style.width = pct + '%';
       loaderPct.textContent = pct + '%';
     }
@@ -579,20 +618,17 @@
       var img = new Image();
       img.decoding = 'async';
       images[i] = img;
-      function fin(){ active--; done++; bump(); if(done===TOTAL){ onLoaded(); } else { pump(); } }
-      img.onload = function(){
-        if (img.decode) { img.decode().then(fin, fin); } else { fin(); }
-      };
-      img.onerror = fin;   // never hang the bar on a missing frame
+      function fin(){ active--; done++; bump(); advanceReady(); if(done < TOTAL) pump(); }
+      img.onload = function(){ if(img.decode){ img.decode().then(fin, fin); } else { fin(); } };
+      img.onerror = fin;                       // never stall on a missing frame
       img.src = framePath(i);
     }
-    function pump(){
-      while(active < CONC && next < TOTAL){ active++; one(next++); }
-    }
+    function pump(){ while(active < CONC && next < TOTAL){ active++; one(next++); } }
     pump();
   }
 
-  function onLoaded(){
+  function reveal(){
+    if(ready) return;                          // reveal once, as soon as the buffer is ready
     ready = true;
     body.classList.remove('is-loading');
     loader.classList.add('done');
@@ -673,11 +709,11 @@
         var g = document.createElementNS(SVGNS,'g');
         g.setAttribute('class','arrow'); g.setAttribute('data-i', idx);
         var line = document.createElementNS(SVGNS,'path'); line.setAttribute('class','arrow-line');
-        var head = document.createElementNS(SVGNS,'polygon'); head.setAttribute('class','arrow-head');
-        var dot  = document.createElementNS(SVGNS,'circle'); dot.setAttribute('class','arrow-dot'); dot.setAttribute('r','2.4');
-        g.appendChild(line); g.appendChild(head); g.appendChild(dot);
+        var ring2 = document.createElementNS(SVGNS,'circle'); ring2.setAttribute('class','arrow-ring'); ring2.setAttribute('r','7');
+        var dot  = document.createElementNS(SVGNS,'circle'); dot.setAttribute('class','arrow-dot'); dot.setAttribute('r','2.2');
+        g.appendChild(line); g.appendChild(ring2); g.appendChild(dot);
         wires.appendChild(g);
-        arrowEls.push({ g:g, line:line, head:head, dot:dot });
+        arrowEls.push({ g:g, line:line, ring:ring2, dot:dot });
 
         var lab = document.createElement('div');
         lab.className = 'label';
@@ -735,20 +771,13 @@
       }
       var el = arrowEls[i];
 
-      // leader line stops a touch short of the specimen so the head sits on it
+      // leader line runs from the label base to just outside the specimen reticle
       var ang = Math.atan2(sy-by, sx-bx);
-      var gap = 7;
-      var ex = sx - Math.cos(ang)*gap, ey = sy - Math.sin(ang)*gap;
+      var stop = 11;
+      var ex = sx - Math.cos(ang)*stop, ey = sy - Math.sin(ang)*stop;
       el.line.setAttribute('d', 'M '+bx+' '+by+' L '+ex+' '+ey);
       el.dot.setAttribute('cx', bx); el.dot.setAttribute('cy', by);
-      // arrowhead triangle at the specimen
-      var hl = 9, hw = 5.2;
-      var tipx = sx, tipy = sy;
-      var b1x = tipx - Math.cos(ang)*hl - Math.sin(ang)*hw;
-      var b1y = tipy - Math.sin(ang)*hl + Math.cos(ang)*hw;
-      var b2x = tipx - Math.cos(ang)*hl + Math.sin(ang)*hw;
-      var b2y = tipy - Math.sin(ang)*hl - Math.cos(ang)*hw;
-      el.head.setAttribute('points', tipx+','+tipy+' '+b1x+','+b1y+' '+b2x+','+b2y);
+      el.ring.setAttribute('cx', sx); el.ring.setAttribute('cy', sy);   // reticle centered on the specimen
 
       // label placement relative to its leader base
       var lab = labelEls[i];
@@ -793,13 +822,14 @@
       if(Math.abs(targetFrame - renderFrame) < 0.4) renderFrame = targetFrame;
     }
     var idx = Math.round(renderFrame);
-    if(idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
+    if(idx > maxReady) idx = maxReady;              // never draw past what's loaded (progressive)
+    if(idx >= 0 && idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
     updateOverlay();
   }
   function rafLoop(){ renderTick(); requestAnimationFrame(rafLoop); }
 
   function updateOverlay(){
-    var active = (targetFrame >= LAST) && !cardOpen;
+    var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen;
     if(active !== overlayActive){
       overlayActive = active;
       overlay.classList.toggle('active', active);
@@ -844,6 +874,11 @@
   }
 
   var GSAP = function(){ return window.gsap; };
+  function staggerCardContent(delay){
+    if(!GSAP()) return;
+    var els = card.querySelectorAll('.card-kicker, .card-title, .entry, .card-text, .tags');
+    gsap.fromTo(els, { opacity:0, y:14 }, { opacity:1, y:0, duration:0.5, ease:'expo.out', stagger:0.055, delay:delay });
+  }
 
   function showCard(){
     scrim.classList.add('show');
@@ -853,6 +888,7 @@
       gsap.fromTo(card,
         { opacity:0, y:28, scale:0.96, xPercent:-50, yPercent:-50 },
         { opacity:1, y:0, scale:1, duration:0.55, ease:'expo.out' });
+      staggerCardContent(0.12);
     }
   }
   function hideCard(){
@@ -871,6 +907,7 @@
       gsap.to(card, { opacity:0, duration:0.15, ease:'power1.in', onComplete:function(){
         renderCard(i); card.scrollTop = 0;
         gsap.fromTo(card, { opacity:0, y:12 }, { opacity:1, y:0, duration:0.34, ease:'expo.out' });
+        staggerCardContent(0.06);
       }});
     } else {
       renderCard(i); card.scrollTop = 0;
@@ -990,6 +1027,23 @@
       setTimeout(function(){ if(zoneEls[0]) zoneEls[0].focus(); }, reduceMotion ? 90 : 800);
     });
   }
+
+  // custom circle cursor on fine-pointer (desktop) devices
+  (function initCursor(){
+    if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    var cur = document.getElementById('cursor');
+    if(!cur) return;
+    document.documentElement.classList.add('has-cursor');
+    var cx=0, cy=0, tx=0, ty=0, on=false;
+    window.addEventListener('pointermove', function(e){
+      tx=e.clientX; ty=e.clientY;
+      if(!on){ on=true; cx=tx; cy=ty; cur.classList.add('on'); }
+    }, {passive:true});
+    var SEL = '.zone, a, button, input, textarea, select, [data-cursor]';
+    document.addEventListener('mouseover', function(e){ if(e.target.closest && e.target.closest(SEL)) cur.classList.add('big'); }, {passive:true});
+    document.addEventListener('mouseout',  function(e){ if(e.target.closest && e.target.closest(SEL)) cur.classList.remove('big'); }, {passive:true});
+    (function loop(){ cx+=(tx-cx)*0.22; cy+=(ty-cy)*0.22; cur.style.transform='translate('+cx+'px,'+cy+'px)'; requestAnimationFrame(loop); })();
+  })();
 
   function setSpacer(){
     spacer.style.height = (startHold() + SEQ + viewH() * 3) + 'px';
