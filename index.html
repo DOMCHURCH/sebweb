@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sebastien Church — Neuroscience &amp; Mental Health</title>
+<meta name="description" content="Sebastien Church — B.Sc. Neuroscience &amp; Mental Health (Honours), Carleton University. Research, field experience, education, volunteering, and certifications." />
+<meta name="theme-color" content="#000000" />
+<meta name="color-scheme" content="dark" />
+<!-- Open Graph (nice link previews for sharing) -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Sebastien Church — Neuroscience &amp; Mental Health" />
+<meta property="og:description" content="A cinematic portfolio. Scroll through the lens to explore Sebastien's research, experience, and certifications." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  /* ============================================================
+     SEBASTIEN CHURCH — scroll-scrubbed cinematic portfolio
+     Single file. No frameworks, no runtime dependencies.
+     ============================================================ */
+
+  :root{
+    --neon:        #1a4fd6;               /* spec neon dark blue           */
+    --neon-bright: #5b8cff;               /* hover / active intensification */
+    --neon-glow:   rgba(26, 79, 214, .8);
+    --ink:         #ffffff;
+    --ink-dim:     rgba(255,255,255,.62);
+    --ink-faint:   rgba(255,255,255,.34);
+
+    --card-bg:     rgba(10, 15, 40, .75);
+    --card-border: rgba(100, 149, 237, .30);
+    --card-shadow: 0 0 30px rgba(30, 80, 200, .40);
+
+    --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-sans:    'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    --ease:        cubic-bezier(0.16, 1, 0.3, 1);  /* ease-out-expo feel */
+    --dur:         400ms;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html,body{ margin:0; padding:0; background:#000; }
+  body{
+    font-family:var(--font-sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* scroll is disabled until frames finish loading, and while a card is open */
+  body.is-loading{ overflow:hidden; }
+  body.card-open{ /* scroll lock handled in JS via position:fixed */ }
+
+  img{ display:block; }
+  button{ font-family:inherit; }
+
+  /* --- The scroll spacer: gives the page its scrollable height --------- */
+  #spacer{ position:relative; width:1px; height:100vh; pointer-events:none; }
+
+  /* --- Fixed cinematic canvas ---------------------------------------- */
+  #scene{
+    position:fixed; inset:0;
+    width:100vw; height:100vh; height:100dvh;
+    display:block;
+    background:#000;
+    z-index:1;
+    opacity:0;
+    transition:opacity 900ms var(--ease);
+  }
+  #scene.ready{ opacity:1; }
+
+  /* subtle cinematic vignette — cheap, static, adds depth without cost */
+  #vignette{
+    position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 46%, transparent 55%, rgba(0,0,0,.45) 100%);
+    opacity:0; transition:opacity 900ms var(--ease);
+  }
+  #scene.ready ~ #vignette{ opacity:1; }
+
+  /* ================= LOADING SCREEN ================================= */
+  #loader{
+    position:fixed; inset:0; z-index:200;
+    background:#000; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2.4rem;
+    transition:opacity 700ms var(--ease), visibility 700ms;
+  }
+  #loader.done{ opacity:0; visibility:hidden; }
+  .loader-mark{
+    font-family:var(--font-display);
+    font-weight:500;
+    letter-spacing:.06em;
+    font-size:clamp(1.5rem, 4vw, 2.6rem);
+    color:var(--ink);
+    opacity:.92;
+  }
+  .loader-sub{
+    font-family:var(--font-sans);
+    font-weight:300;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    font-size:.62rem;
+    color:var(--ink-faint);
+    margin-top:-1.6rem;
+  }
+  .loader-pct{
+    position:absolute; bottom:calc(2.4rem + 22px + env(safe-area-inset-bottom));
+    font-family:var(--font-sans); font-weight:200;
+    font-size:.8rem; letter-spacing:.3em; color:var(--ink-dim);
+    font-variant-numeric:tabular-nums;
+  }
+  .loader-track{
+    position:absolute; left:0; bottom:0; width:100%; height:2px;
+    background:rgba(255,255,255,.06);
+    overflow:hidden;
+  }
+  .loader-bar{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--neon), var(--neon-bright));
+    box-shadow:0 0 12px var(--neon), 0 0 4px var(--neon-bright);
+    transition:width 260ms var(--ease);
+  }
+
+  /* ================= SCROLL HINT (intro) ============================ */
+  #hint{
+    position:fixed; left:50%; bottom:calc(3.2vh + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    z-index:6; text-align:center; pointer-events:none;
+    color:var(--ink-faint);
+    opacity:0; transition:opacity 900ms var(--ease);
+  }
+  #hint.show{ opacity:1; }
+  #hint .word{
+    font-weight:300; letter-spacing:.44em; text-transform:uppercase;
+    font-size:.6rem;
+  }
+  #hint .rail{
+    margin:.9rem auto 0; width:1px; height:46px; position:relative;
+    background:rgba(255,255,255,.14); overflow:hidden;
+  }
+  #hint .rail::after{
+    content:""; position:absolute; left:0; top:-40%; width:100%; height:40%;
+    background:linear-gradient(180deg, transparent, var(--neon-bright));
+    animation:railrun 1.9s var(--ease) infinite;
+  }
+  @keyframes railrun{ 0%{transform:translateY(-100%)} 60%,100%{transform:translateY(360%)} }
+
+  /* ================= INTERACTIVE OVERLAY ============================ */
+  #overlay{
+    position:fixed; inset:0; z-index:5;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity var(--dur) var(--ease), visibility var(--dur);
+  }
+  #overlay.active{ opacity:1; visibility:visible; }
+
+  /* #field is positioned in JS to exactly match the drawn frame's
+     "cover" rectangle, so every % below lands on the real specimen. */
+  #field{ position:absolute; left:0; top:0; }
+
+  /* circular reference mask over the pink microscope field */
+  #ring{
+    position:absolute; border-radius:50%;
+    border:1px solid rgba(255,255,255,.05);
+    box-shadow:inset 0 0 60px rgba(0,0,0,.25);
+    pointer-events:none;
+  }
+
+  #wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
+  .arrow-line{ stroke:var(--neon); stroke-width:1.5; fill:none; opacity:.9;
+    transition:stroke var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+  .arrow-head{ fill:var(--neon); opacity:.95;
+    transition:fill var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+  .arrow-dot{ fill:var(--neon-bright); }
+  .arrow{ filter:drop-shadow(0 0 6px var(--neon)); transition:filter var(--dur) var(--ease); }
+  .arrow.hot{ filter:drop-shadow(0 0 12px var(--neon)); }
+  .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:1; }
+  .arrow.hot .arrow-head{ fill:var(--neon-bright); opacity:1; }
+
+  .label{
+    position:absolute; pointer-events:none;
+    font-family:var(--font-sans); font-weight:300;
+    letter-spacing:.28em; text-transform:uppercase;
+    font-size:.72rem; line-height:1.3; color:var(--ink-dim);
+    text-shadow:0 0 8px var(--neon-glow);
+    white-space:nowrap;
+    transition:color var(--dur) var(--ease), text-shadow var(--dur) var(--ease);
+  }
+  .label .u{
+    display:block; height:1px; margin-top:.5rem; width:2.4rem;
+    background:var(--neon);
+    box-shadow:0 0 8px var(--neon);
+    transition:background var(--dur) var(--ease), width var(--dur) var(--ease);
+  }
+  .label.r{ text-align:right; }
+  .label.r .u{ margin-left:auto; }
+  .label.c{ text-align:center; }
+  .label.c .u{ margin-left:auto; margin-right:auto; }
+  .label.hot{ color:#fff; text-shadow:0 0 12px var(--neon-bright); }
+  .label.hot .u{ background:var(--neon-bright); width:3.2rem; box-shadow:0 0 12px var(--neon-bright); }
+
+  .zone{
+    position:absolute; transform:translate(-50%,-50%);
+    width:96px; height:96px; border-radius:50%;
+    cursor:pointer; background:transparent; border:0; padding:0;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .zone:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:4px; }
+  /* only the specimen hit-zones capture pointer events, and only when live */
+  #overlay.active .zone{ pointer-events:auto; }
+
+  /* small persistent prompt so users know the field is interactive */
+  #prompt{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(5.5vh + env(safe-area-inset-bottom)); z-index:6;
+    font-weight:300; letter-spacing:.4em; text-transform:uppercase;
+    font-size:.58rem; color:var(--ink-faint);
+    opacity:0; transition:opacity var(--dur) var(--ease);
+    pointer-events:none;
+  }
+  #overlay.active #prompt{ opacity:1; animation:pulse 3.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:.28} 50%{opacity:.6} }
+
+  /* ================= CARD (glassmorphic modal) ===================== */
+  #scrim{
+    position:fixed; inset:0; z-index:99;
+    background:rgba(0,0,0,.55);
+    opacity:0; visibility:hidden;
+    transition:opacity var(--dur) var(--ease), visibility var(--dur);
+    -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  }
+  #scrim.show{ opacity:1; visibility:visible; }
+
+  #card{
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%,-46%) scale(.98);
+    z-index:100;
+    width:min(680px, calc(100vw - 32px));
+    max-height:min(86vh, 860px);
+    overflow-y:auto; overscroll-behavior:contain;
+    background:var(--card-bg);
+    -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    box-shadow:var(--card-shadow);
+    color:#fff;
+    padding:28px clamp(22px,4vw,36px) 54px;
+    opacity:0; visibility:hidden;
+    transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease), visibility var(--dur);
+  }
+  #card.show{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+  /* opaque fallback where backdrop-filter is unsupported */
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    #card{ background:rgba(8,12,32,.97); }
+    #scrim{ background:rgba(0,0,0,.8); }
+  }
+
+  .card-media{
+    position:relative; width:100%; aspect-ratio:16/9;
+    border-radius:8px; background:rgba(255,255,255,.05);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; margin-bottom:22px;
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .card-media span{ font-weight:200; letter-spacing:.5em; font-size:.7rem; color:var(--ink-faint); }
+  .card-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+  .card-kicker{
+    font-weight:300; letter-spacing:.42em; text-transform:uppercase;
+    font-size:.56rem; color:var(--neon-bright);
+    margin:0 0 .55rem;
+  }
+  .card-title{
+    font-family:var(--font-sans); font-weight:300;
+    letter-spacing:.16em; text-transform:uppercase;
+    font-size:clamp(1.15rem,2.6vw,1.5rem);
+    margin:0 0 1.4rem; color:#fff;
+  }
+  .entry{ margin:0 0 1.15rem; padding-left:14px; border-left:1px solid rgba(100,149,237,.28); }
+  .entry:last-child{ margin-bottom:0; }
+  .entry-head{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; flex-wrap:wrap; }
+  .entry-role{ font-weight:400; font-size:.92rem; letter-spacing:.02em; color:#fff; }
+  .entry-org{ font-weight:300; font-size:.82rem; color:var(--neon-bright); letter-spacing:.03em; }
+  .entry-date{ font-weight:300; font-size:.68rem; color:var(--ink-faint); letter-spacing:.14em;
+    text-transform:uppercase; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .entry-desc, .card-text{
+    font-weight:300; font-size:14px; line-height:1.8; color:rgba(255,255,255,.78);
+    margin:.5rem 0 0;
+  }
+  .card-text{ margin:0 0 1.1rem; }
+  .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:1.3rem; }
+  .tag{
+    font-weight:300; font-size:.66rem; letter-spacing:.12em;
+    padding:6px 11px; border-radius:999px;
+    background:rgba(100,149,237,.10);
+    border:1px solid rgba(100,149,237,.24);
+    color:rgba(255,255,255,.8);
+  }
+
+  .icon-btn{
+    position:absolute; width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:0; color:#fff; cursor:pointer;
+    font-size:24px; line-height:1; opacity:.8;
+    transition:opacity 200ms var(--ease), transform 200ms var(--ease);
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .icon-btn:hover{ opacity:1; }
+  .icon-btn:active{ transform:scale(.9); }
+  .icon-btn:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:2px; border-radius:8px; opacity:1; }
+  #card-close{ top:10px; right:12px; font-size:22px; }
+  #card-next{ bottom:12px; right:14px; }
+  .card-count{
+    position:absolute; bottom:20px; left:clamp(22px,4vw,36px);
+    font-weight:200; font-size:.66rem; letter-spacing:.24em; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ================= ACCESSIBLE / NO-JS FALLBACK =================== */
+  .skip{
+    position:fixed; top:12px; left:12px; z-index:300;
+    transform:translateY(-180%);
+    background:var(--neon); color:#fff;
+    font-family:var(--font-sans); font-weight:400;
+    letter-spacing:.14em; text-transform:uppercase; font-size:.68rem;
+    padding:10px 16px; border-radius:8px; text-decoration:none;
+    transition:transform 200ms var(--ease);
+  }
+  .skip:focus{ transform:translateY(0); outline:2px solid #fff; outline-offset:2px; }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+  #nojs{ position:fixed; inset:0; z-index:500; background:#000; color:#fff;
+    display:flex; align-items:center; justify-content:center; padding:8vw; text-align:center;
+    font-weight:300; line-height:1.8; }
+
+  /* ================= RESPONSIVE ==================================== */
+  @media (max-width:768px){
+    .label{ font-size:.6rem; letter-spacing:.2em; }
+    .zone{ width:64px; height:64px; }
+    #card{ padding:22px 18px 30px; border-radius:14px; }
+    .card-title{ letter-spacing:.12em; }
+  }
+  @media (max-width:390px){
+    .label{ font-size:.54rem; letter-spacing:.16em; }
+    .entry-head{ gap:4px; }
+  }
+
+  /* ================= REDUCED MOTION ================================ */
+  @media (prefers-reduced-motion:reduce){
+    #scene, #vignette, #loader, #hint, #overlay, #scrim, #card,
+    .arrow, .arrow-line, .arrow-head, .label, .label .u, .loader-bar{
+      transition-duration:1ms !important;
+    }
+    #hint .rail::after{ animation:none; }
+    #overlay.active #prompt{ animation:none; }
+  }
+</style>
+</head>
+<body class="is-loading">
+
+  <a href="#" id="skip" class="skip">Skip to portfolio</a>
+
+  <!-- Scrollable height driver -->
+  <div id="spacer" aria-hidden="true"></div>
+
+  <!-- Cinematic frame canvas -->
+  <canvas id="scene" role="img"
+    aria-label="Cinematic sequence: the name Sebastien resolves into a microscope, then pushes through the eyepiece onto a slide with five specimens, each linking to a section of the portfolio."></canvas>
+  <div id="vignette" aria-hidden="true"></div>
+
+  <!-- Interactive overlay (fades in on the final frame) -->
+  <div id="overlay" aria-hidden="true">
+    <div id="field">
+      <div id="ring" aria-hidden="true"></div>
+      <svg id="wires" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
+      <!-- labels, dots and zones are injected here by JS -->
+    </div>
+    <div id="prompt">Select a specimen</div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div id="hint" aria-hidden="true">
+    <div class="word">Scroll</div>
+    <div class="rail"></div>
+  </div>
+
+  <!-- Card modal -->
+  <div id="scrim"></div>
+  <div id="card" role="dialog" aria-modal="true" aria-labelledby="card-title-el" tabindex="-1">
+    <button id="card-close" class="icon-btn" aria-label="Close">&times;</button>
+    <div class="card-media" id="card-media"></div>
+    <p class="card-kicker" id="card-kicker"></p>
+    <h2 class="card-title" id="card-title-el"></h2>
+    <div id="card-body"></div>
+    <div class="card-count" id="card-count"></div>
+    <button id="card-next" class="icon-btn" aria-label="Next section">&rsaquo;</button>
+  </div>
+
+  <!-- Loading screen -->
+  <div id="loader">
+    <div class="loader-mark">Sebastien</div>
+    <div class="loader-sub">Neuroscience &amp; Mental Health</div>
+    <div class="loader-pct" id="loader-pct">0%</div>
+    <div class="loader-track"><div class="loader-bar" id="loader-bar"></div></div>
+  </div>
+
+  <!-- Accessible, always-present text version of the content (SR + SEO) -->
+  <main class="sr-only" id="a11y-content">
+    <h1>Sebastien Church — Neuroscience &amp; Mental Health</h1>
+    <section><h2>Research &amp; Lab</h2><p>Lab Assistant at Carleton University. Cell quantification for a PhD thesis investigating Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training. Computer-assisted microscope analysis using Stereo Investigator. c-Fos quantification in defined brain regions. Tools: RStudio, Stereo Investigator.</p></section>
+    <section><h2>Field Experience</h2><p>Reserves Combat Medic in Training, Canadian Armed Forces (April 2026 – Present). Student First Responder and Social Coordinator, CUSERT (September 2024 – Present) — first line of response to medical emergencies, administering first aid, triaging patient needs, and supporting handoff to City of Ottawa emergency services. Summer Research Student, CMHA (April 2024 – September 2025) — DEI database research, contributed to the CMHA DEI report (November 2024).</p></section>
+    <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, Carleton University (2023 – 2027). Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023). Student council Grade 10 representative and Minister of Sports. Competitive track and field, cross country, and badminton. OFSAA qualifier, top 10 Ontario doubles.</p></section>
+    <section><h2>Volunteering</h2><p>Medicine4Youth VP Marketing, Carleton University Chapter (September 2025 – Present) — managing sponsor relationships, coordinating events, and developing partnerships with university clubs. Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – November 2023). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camps des Faucons (July 2019 – August 2021).</p></section>
+    <section><h2>Certifications &amp; Skills</h2><p>First Responder — Canadian Red Cross (October 2024 – October 2027). Mental Health First Aid — Mental Health Commission of Canada (January 2025). Standard First Aid and CPR/AED Level C — Canadian Red Cross (November 2022). Fluently bilingual English and French. Skills: Laboratory Skills, RStudio, Stereo Investigator, Stakeholder Management, Scholarly Research, Analytical Skills, First Aid Training, Leadership.</p></section>
+  </main>
+
+  <noscript>
+    <div id="nojs">This portfolio is an interactive, scroll-driven experience that requires JavaScript. Please enable it — or view the text version above with a screen reader.</div>
+  </noscript>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Frame sequence constants (measured from the videos) ---- */
+  var N1 = 210, N2 = 300;              // video1 = frames 0..209, video2 = 210..509
+  var TOTAL = N1 + N2;                 // 510
+  var LAST = TOTAL - 1;               // 509
+  var PPF = 8;                         // pixels of scroll per frame
+  var SEQ = TOTAL * PPF;              // 4080  (scroll range that scrubs frames)
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var mobileTier   = window.matchMedia('(max-width: 768px)').matches
+                     || (navigator.connection && navigator.connection.saveData
+                         && window.matchMedia('(max-width: 1024px)').matches);
+  var TIER = mobileTier ? 'mobile' : 'desktop';
+
+  /* ---------- Specimen + annotation map (percent of the FRAME) --------
+     Positions tuned to the actual last frame of video2. bx/by is where the
+     label/leader begins (outside the pink circle); sx/sy is the specimen. */
+  // Desktop leaders (bx/by = % of frame, outside the circle).
+  // Mobile leaders (mvx/mvy = fraction of VIEWPORT — labels live in the
+  // black bands above/below the circle, since the circle fills the width).
+  var ANNOT = [
+    { key:'research', label:'Research &amp; Lab',            sx:49, sy:48, bx:16, by:49, dir:'left',
+      mvx:0.50, mvy:0.15, mdir:'center' },
+    { key:'field',    label:'Field Experience',          sx:42, sy:34, bx:21, by:19, dir:'left',
+      mvx:0.05, mvy:0.10, mdir:'right' },
+    { key:'education',label:'Education',                 sx:58, sy:35, bx:79, by:19, dir:'right',
+      mvx:0.95, mvy:0.10, mdir:'left' },
+    { key:'volunteer',label:'Volunteering',              sx:42, sy:60, bx:21, by:80, dir:'left',
+      mvx:0.05, mvy:0.89, mdir:'right' },
+    { key:'certs',    label:'Certifications &amp; Skills',   sx:59, sy:58, bx:79, by:80, dir:'right',
+      mvx:0.95, mvy:0.89, mdir:'left' }
+  ];
+  // circle (pink field) geometry, percent of frame
+  var RING = { cx:49, cy:48, r:13.8 };  // r is % of frame WIDTH
+
+  /* ---------- Card content (clockwise 1 -> 5) ----------------------- */
+  var CARDS = [
+    { key:'research', kicker:'01 — Specimen', title:'Research &amp; Lab', img:'',
+      entries:[
+        {role:'Lab Assistant', org:'Carleton University', date:'',
+         desc:'Cell quantification for a PhD thesis investigating Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training. Computer-assisted microscope analysis with Stereo Investigator; c-Fos quantification in defined brain regions.'}
+      ],
+      tags:['RStudio','Stereo Investigator'] },
+
+    { key:'field', kicker:'02 — Specimen', title:'Field Experience', img:'',
+      entries:[
+        {role:'Reserves Combat Medic in Training', org:'Canadian Armed Forces', date:'Apr 2026 — Present', desc:''},
+        {role:'Student First Responder & Social Coordinator', org:'CUSERT', date:'Sep 2024 — Present',
+         desc:'First line of response to medical emergencies — administering first aid, triaging patient needs, and supporting handoff to City of Ottawa emergency services.'},
+        {role:'Summer Research Student', org:'CMHA', date:'Apr 2024 — Sep 2025',
+         desc:'Conducted DEI database research; contributed to the CMHA DEI report (November 2024).'}
+      ], tags:[] },
+
+    { key:'education', kicker:'03 — Specimen', title:'Education', img:'',
+      entries:[
+        {role:'B.Sc. Neuroscience & Mental Health (Honours)', org:'Carleton University', date:'2023 — 2027', desc:''},
+        {role:'OSSD with Honours', org:'École Secondaire Catholique Franco-Cité', date:'2019 — 2023',
+         desc:'Student council Grade 10 representative & Minister of Sports. Competitive track & field, cross country, and badminton — OFSAA qualifier, top-10 Ontario doubles.'}
+      ], tags:[] },
+
+    { key:'volunteer', kicker:'04 — Specimen', title:'Volunteering', img:'',
+      entries:[
+        {role:'VP Marketing', org:'Medicine4Youth — Carleton Chapter', date:'Sep 2025 — Present',
+         desc:'Managing sponsor relationships, coordinating events, and developing partnerships with university clubs.'},
+        {role:'Assistant Track & Field Coach', org:'Grasshopper Hill Run Club', date:'Sep 2022 — Nov 2023', desc:''},
+        {role:'Student Volunteer', org:'RA Centre, Ottawa', date:'Jul 2019 — Aug 2023',
+         desc:'Led badminton camps for groups of 20–30 children.'},
+        {role:'Summer Camp Counsellor', org:'Camps des Faucons', date:'Jul 2019 — Aug 2021', desc:''}
+      ], tags:[] },
+
+    { key:'certs', kicker:'05 — Specimen', title:'Certifications &amp; Skills', img:'',
+      entries:[
+        {role:'First Responder', org:'Canadian Red Cross', date:'Oct 2024 — Oct 2027', desc:''},
+        {role:'Mental Health First Aid', org:'Mental Health Commission of Canada', date:'Jan 2025', desc:''},
+        {role:'Standard First Aid & CPR/AED Level C', org:'Canadian Red Cross', date:'Nov 2022', desc:''}
+      ],
+      text:'Fluently bilingual — English & French.',
+      tags:['Laboratory Skills','RStudio','Stereo Investigator','Stakeholder Management','Scholarly Research','Analytical Skills','First Aid','Leadership'] }
+  ];
+
+  /* ---------- Elements --------------------------------------------- */
+  var body = document.body;
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var spacer = document.getElementById('spacer');
+  var loader = document.getElementById('loader');
+  var loaderBar = document.getElementById('loader-bar');
+  var loaderPct = document.getElementById('loader-pct');
+  var overlay = document.getElementById('overlay');
+  var field = document.getElementById('field');
+  var ring = document.getElementById('ring');
+  var wires = document.getElementById('wires');
+  var hint = document.getElementById('hint');
+  var scrim = document.getElementById('scrim');
+  var card = document.getElementById('card');
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* ---------- State ------------------------------------------------- */
+  var images = new Array(TOTAL);
+  var loaded = 0;
+  var ready = false;
+  var targetFrame = 0, renderFrame = 0, lastDrawn = -1;
+  var coverRect = { x:0, y:0, w:0, h:0 };
+  var frameW = TIER === 'mobile' ? 900 : 1600;   // fallback until first img loads
+  var frameH = TIER === 'mobile' ? 502 : 894;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var overlayActive = false;
+  var cardOpen = false;
+  var curCard = 0;
+  var lockY = 0;
+  var lastFocus = null;
+  var hintShown = false;
+
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function pad(n){ n=''+n; while(n.length<4) n='0'+n; return n; }
+  function framePath(i){ return 'frames/'+TIER+'/f'+pad(i)+'.webp'; }
+  // visible-viewport dims — tracks iOS/Android URL-bar show/hide, unlike innerHeight
+  function viewW(){ return (window.visualViewport && window.visualViewport.width)  || window.innerWidth; }
+  function viewH(){ return (window.visualViewport && window.visualViewport.height) || window.innerHeight; }
+
+  /* ================= PRELOAD ======================================= */
+  function preload(){
+    var CONC = 12, next = 0, done = 0, active = 0;
+    function bump(){
+      loaded++;
+      var pct = Math.round(loaded / TOTAL * 100);
+      loaderBar.style.width = pct + '%';
+      loaderPct.textContent = pct + '%';
+    }
+    function one(i){
+      var img = new Image();
+      img.decoding = 'async';
+      images[i] = img;
+      function fin(){ active--; done++; bump(); if(done===TOTAL){ onLoaded(); } else { pump(); } }
+      img.onload = function(){
+        if (img.decode) { img.decode().then(fin, fin); } else { fin(); }
+      };
+      img.onerror = fin;   // never hang the bar on a missing frame
+      img.src = framePath(i);
+    }
+    function pump(){
+      while(active < CONC && next < TOTAL){ active++; one(next++); }
+    }
+    pump();
+  }
+
+  function onLoaded(){
+    ready = true;
+    body.classList.remove('is-loading');
+    loader.classList.add('done');
+    canvas.classList.add('ready');
+    layout();
+    draw(0);
+    // reveal scroll hint shortly after
+    setTimeout(function(){ if(!hintShown){ hint.classList.add('show'); } }, 700);
+    requestAnimationFrame(tick);
+  }
+
+  /* ================= CANVAS SIZING + DRAW ========================= */
+  function sizeCanvas(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var vw = viewW(), vh = viewH();
+    canvas.width = Math.round(vw * dpr);
+    canvas.height = Math.round(vh * dpr);
+    canvas.style.width = vw + 'px';
+    canvas.style.height = vh + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function computeCover(){
+    var vw = viewW(), vh = viewH();
+    var s = Math.max(vw / frameW, vh / frameH);
+    var w = frameW * s, h = frameH * s;
+    coverRect.x = (vw - w) / 2;
+    coverRect.y = (vh - h) / 2;
+    coverRect.w = w;
+    coverRect.h = h;
+  }
+
+  function draw(i){
+    var img = images[i];
+    if(!img || !img.complete || !img.naturalWidth) return;
+    // keep frame dims in sync with the real asset (first successful draw)
+    if(img.naturalWidth && img.naturalWidth !== frameW){
+      frameW = img.naturalWidth; frameH = img.naturalHeight; computeCover();
+    }
+    var vw = viewW(), vh = viewH();
+    ctx.clearRect(0,0,vw,vh);
+    ctx.drawImage(img, coverRect.x, coverRect.y, coverRect.w, coverRect.h);
+  }
+
+  /* ================= LAYOUT (cover rect -> overlay field) ========= */
+  function layout(){
+    sizeCanvas();
+    computeCover();
+    // position the overlay field exactly over the drawn frame
+    field.style.left = coverRect.x + 'px';
+    field.style.top = coverRect.y + 'px';
+    field.style.width = coverRect.w + 'px';
+    field.style.height = coverRect.h + 'px';
+    layoutOverlay();
+  }
+
+  var built = false;
+  var zoneEls = [], labelEls = [], arrowEls = [];
+  function buildOverlay(){
+    if(built) return; built = true;
+    // arrowheads + leaders live in one SVG
+    for(var i=0;i<ANNOT.length;i++){
+      (function(a, idx){
+        var g = document.createElementNS(SVGNS,'g');
+        g.setAttribute('class','arrow'); g.setAttribute('data-i', idx);
+        var line = document.createElementNS(SVGNS,'path'); line.setAttribute('class','arrow-line');
+        var head = document.createElementNS(SVGNS,'polygon'); head.setAttribute('class','arrow-head');
+        var dot  = document.createElementNS(SVGNS,'circle'); dot.setAttribute('class','arrow-dot'); dot.setAttribute('r','2.4');
+        g.appendChild(line); g.appendChild(head); g.appendChild(dot);
+        wires.appendChild(g);
+        arrowEls.push({ g:g, line:line, head:head, dot:dot });
+
+        var lab = document.createElement('div');
+        lab.className = 'label';
+        lab.innerHTML = a.label + '<span class="u"></span>';
+        field.appendChild(lab);
+        labelEls.push(lab);
+
+        var z = document.createElement('button');
+        z.className = 'zone'; z.type='button'; z.setAttribute('data-i', idx);
+        z.setAttribute('aria-label', 'Open ' + a.label.replace('&amp;','and'));
+        field.appendChild(z);
+        zoneEls.push(z);
+
+        z.addEventListener('click', function(){ openCard(idx); });
+        z.addEventListener('mouseenter', function(){ setHot(idx, true); });
+        z.addEventListener('mouseleave', function(){ setHot(idx, false); });
+        z.addEventListener('focus', function(){ setHot(idx, true); });
+        z.addEventListener('blur', function(){ setHot(idx, false); });
+      })(ANNOT[i], i);
+    }
+  }
+
+  function setHot(idx, on){
+    if(arrowEls[idx]) arrowEls[idx].g.classList.toggle('hot', on);
+    if(labelEls[idx]) labelEls[idx].classList.toggle('hot', on);
+  }
+
+  function layoutOverlay(){
+    buildOverlay();
+    var W = coverRect.w, H = coverRect.h;
+    wires.setAttribute('width', W); wires.setAttribute('height', H);
+    wires.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+    // ring (circle) — radius is % of frame width, kept perfectly round
+    var rpx = RING.r/100 * W;
+    ring.style.width = (rpx*2) + 'px';
+    ring.style.height = (rpx*2) + 'px';
+    ring.style.left = (RING.cx/100*W - rpx) + 'px';
+    ring.style.top = (RING.cy/100*H - rpx) + 'px';
+
+    var vw = viewW(), vh = viewH();
+    var narrow = vw <= 768;
+
+    for(var i=0;i<ANNOT.length;i++){
+      var a = ANNOT[i];
+      var sx = a.sx/100*W, sy = a.sy/100*H;   // specimen (always frame-relative)
+      var bx, by, dir;
+      if(narrow){
+        // leader base placed in viewport space (black bands), mapped into field
+        bx = a.mvx*vw - coverRect.x;
+        by = a.mvy*vh - coverRect.y;
+        dir = a.mdir;
+      } else {
+        bx = a.bx/100*W; by = a.by/100*H; dir = a.dir;
+      }
+      var el = arrowEls[i];
+
+      // leader line stops a touch short of the specimen so the head sits on it
+      var ang = Math.atan2(sy-by, sx-bx);
+      var gap = 7;
+      var ex = sx - Math.cos(ang)*gap, ey = sy - Math.sin(ang)*gap;
+      el.line.setAttribute('d', 'M '+bx+' '+by+' L '+ex+' '+ey);
+      el.dot.setAttribute('cx', bx); el.dot.setAttribute('cy', by);
+      // arrowhead triangle at the specimen
+      var hl = 9, hw = 5.2;
+      var tipx = sx, tipy = sy;
+      var b1x = tipx - Math.cos(ang)*hl - Math.sin(ang)*hw;
+      var b1y = tipy - Math.sin(ang)*hl + Math.cos(ang)*hw;
+      var b2x = tipx - Math.cos(ang)*hl + Math.sin(ang)*hw;
+      var b2y = tipy - Math.sin(ang)*hl - Math.cos(ang)*hw;
+      el.head.setAttribute('points', tipx+','+tipy+' '+b1x+','+b1y+' '+b2x+','+b2y);
+
+      // label placement relative to its leader base
+      var lab = labelEls[i];
+      lab.classList.remove('r','c');
+      lab.style.right = 'auto';
+      lab.style.top = by + 'px';
+      if(dir === 'left'){            // text ends at base, extends left
+        lab.style.left = (bx - 8) + 'px';
+        lab.style.transform = 'translate(-100%,-50%)';
+        lab.classList.add('r');
+      } else if(dir === 'center'){   // text centered on base
+        lab.style.left = bx + 'px';
+        lab.style.transform = 'translate(-50%,-50%)';
+        lab.classList.add('c');
+      } else {                       // text starts at base, extends right
+        lab.style.left = (bx + 8) + 'px';
+        lab.style.transform = 'translateY(-50%)';
+      }
+
+      // click zone over the specimen
+      var z = zoneEls[i];
+      z.style.left = sx + 'px';
+      z.style.top = sy + 'px';
+    }
+  }
+
+  /* ================= MAIN LOOP ==================================== */
+  function scrollTop(){ return window.pageYOffset || document.documentElement.scrollTop || 0; }
+
+  function tick(){
+    if(!cardOpen){
+      targetFrame = clamp(Math.floor(scrollTop() / PPF), 0, LAST);
+    }
+    if(reduceMotion){
+      renderFrame = targetFrame;
+    } else {
+      renderFrame += (targetFrame - renderFrame) * 0.16;
+      if(Math.abs(targetFrame - renderFrame) < 0.4) renderFrame = targetFrame;
+    }
+    var idx = Math.round(renderFrame);
+    if(idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
+    updateOverlay();
+    requestAnimationFrame(tick);
+  }
+
+  function updateOverlay(){
+    var active = (targetFrame >= LAST) && !cardOpen;
+    if(active !== overlayActive){
+      overlayActive = active;
+      overlay.classList.toggle('active', active);
+      overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+      if(active){ layoutOverlay(); }
+      else if(field.contains(document.activeElement) && document.activeElement.blur){ document.activeElement.blur(); }
+      for(var zi=0; zi<zoneEls.length; zi++){ zoneEls[zi].tabIndex = active ? 0 : -1; }
+    }
+    // hide the intro scroll hint once the user has moved
+    if(!hintShown && targetFrame > 2){ hintShown = true; hint.classList.remove('show'); }
+  }
+
+  /* ================= CARD =========================================== */
+  function renderCard(i){
+    var c = CARDS[i];
+    document.getElementById('card-kicker').innerHTML = c.kicker;
+    document.getElementById('card-title-el').innerHTML = c.title;
+    document.getElementById('card-count').textContent = (i+1) + ' / ' + CARDS.length;
+
+    var media = document.getElementById('card-media');
+    media.innerHTML = c.img ? '<img src="'+c.img+'" alt="'+c.title.replace('&amp;','and')+'">' : '<span>[ IMAGE ]</span>';
+
+    var b = document.getElementById('card-body');
+    var html = '';
+    for(var e=0; e<c.entries.length; e++){
+      var en = c.entries[e];
+      html += '<div class="entry"><div class="entry-head">'
+            + '<span class="entry-role">'+en.role+'</span>'
+            + (en.date ? '<span class="entry-date">'+en.date+'</span>' : '')
+            + '</div>'
+            + (en.org ? '<div class="entry-org">'+en.org+'</div>' : '')
+            + (en.desc ? '<p class="entry-desc">'+en.desc+'</p>' : '')
+            + '</div>';
+    }
+    if(c.text) html += '<p class="card-text">'+c.text+'</p>';
+    if(c.tags && c.tags.length){
+      html += '<div class="tags">';
+      for(var t=0;t<c.tags.length;t++) html += '<span class="tag">'+c.tags[t]+'</span>';
+      html += '</div>';
+    }
+    b.innerHTML = html;
+  }
+
+  function openCard(i){
+    curCard = i;
+    renderCard(i);
+    if(!cardOpen){
+      lastFocus = document.activeElement;
+      lockScroll();
+      cardOpen = true;
+      body.classList.add('card-open');
+      scrim.classList.add('show');
+      card.classList.add('show');
+    }
+    card.scrollTop = 0;
+    setTimeout(function(){ card.focus(); }, 60);
+  }
+  function closeCard(){
+    if(!cardOpen) return;
+    cardOpen = false;
+    body.classList.remove('card-open');
+    scrim.classList.remove('show');
+    card.classList.remove('show');
+    unlockScroll();
+    if(lastFocus && lastFocus.focus){ lastFocus.focus(); }
+  }
+  function nextCard(){ openCard((curCard + 1) % CARDS.length); }
+
+  /* scroll lock via fixed body; targetFrame is frozen while a card is open */
+  function lockScroll(){
+    lockY = scrollTop();
+    body.style.position = 'fixed';
+    body.style.top = (-lockY) + 'px';
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+  }
+  function unlockScroll(){
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    window.scrollTo(0, lockY);
+  }
+
+  document.getElementById('card-close').addEventListener('click', closeCard);
+  document.getElementById('card-next').addEventListener('click', nextCard);
+  scrim.addEventListener('click', closeCard);
+  document.addEventListener('keydown', function(ev){
+    if(!cardOpen) return;
+    if(ev.key === 'Escape'){ closeCard(); }
+    else if(ev.key === 'ArrowRight'){ nextCard(); }
+    else if(ev.key === 'ArrowLeft'){ openCard((curCard - 1 + CARDS.length) % CARDS.length); }
+    else if(ev.key === 'Tab'){ trapFocus(ev); }
+  });
+  function trapFocus(ev){
+    var f = card.querySelectorAll('button');
+    if(!f.length) return;
+    var first = f[0], last = f[f.length-1];
+    var a = document.activeElement;
+    var inside = card.contains(a) && a !== card;
+    if(ev.shiftKey){
+      if(a === first || a === card || !inside){ ev.preventDefault(); last.focus(); }
+    } else {
+      if(a === last){ ev.preventDefault(); first.focus(); }
+    }
+  }
+
+  /* ================= EVENTS ======================================= */
+  var resizeT;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeT);
+    resizeT = setTimeout(function(){
+      setSpacer();
+      layout();
+      lastDrawn = -1;   // force redraw at new size
+    }, 120);
+  });
+  window.addEventListener('orientationchange', function(){
+    setTimeout(function(){ setSpacer(); layout(); lastDrawn = -1; }, 250);
+  });
+  // iOS/Android URL-bar show/hide fires visualViewport resize (not window resize)
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', function(){
+      clearTimeout(resizeT);
+      resizeT = setTimeout(function(){ setSpacer(); layout(); lastDrawn = -1; }, 120);
+    });
+  }
+  // keyboard / reduced-motion shortcut straight to the interactive specimens
+  var skip = document.getElementById('skip');
+  if(skip){
+    skip.addEventListener('click', function(ev){
+      ev.preventDefault();
+      window.scrollTo({ top: SEQ, behavior: reduceMotion ? 'auto' : 'smooth' });
+      setTimeout(function(){ if(zoneEls[0]) zoneEls[0].focus(); }, reduceMotion ? 80 : 700);
+    });
+  }
+
+  function setSpacer(){
+    spacer.style.height = (SEQ + window.innerHeight * 3) + 'px';
+  }
+
+  /* ================= BOOT ========================================= */
+  setSpacer();
+  sizeCanvas();
+  preload();
+
+})();
+</script>
+</body>
+</html>
