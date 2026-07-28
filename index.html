@@ -52,7 +52,7 @@
 
     --ease:        cubic-bezier(0.16, 1, 0.3, 1);  /* ease-out-expo feel */
     --dur:         400ms;
-    --grain:       .55;                             /* film-grain intensity (0 = off) */
+    --grain:       .16;                             /* film overlay intensity (0 = off) */
   }
 
   *,*::before,*::after{ box-sizing:border-box; }
@@ -95,14 +95,13 @@
   }
   #scene.ready ~ #vignette{ opacity:1; }
 
-  /* cinematic film grain — static alpha overlay, no blend mode (cheap to composite) */
+  /* cinematic film-frame overlay — static alpha, no blend mode; sits BEHIND the UI
+     (over the canvas only) and JS fades it out before the specimen slide. */
   #grain{
-    position:fixed; inset:0; z-index:150; pointer-events:none;
-    background:url(img/grain.png) center/cover;
-    opacity:0; transition:opacity 1.2s var(--ease);
+    position:fixed; inset:0; z-index:3; pointer-events:none;
+    background:url(img/film.png) center/100% 100%;
+    opacity:0;
   }
-  #scene.ready ~ #grain{ opacity:var(--grain); }
-  @media (prefers-reduced-motion:reduce){ #grain{ transition:none; } }
 
   /* ================= CUSTOM CURSOR — minimal dot (fine pointer only) ===
      No lerp, no perpetual rAF loop: the dot sits exactly on the pointer and
@@ -733,6 +732,8 @@
   var progressBar = progressEl ? progressEl.firstElementChild : null;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
+  var grainEl = document.getElementById('grain');
+  var GRAIN = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grain')) || 0.16;
   var overlay = document.getElementById('overlay');
   var field = document.getElementById('field');
   var ring = document.getElementById('ring');
@@ -776,7 +777,7 @@
   /* ================= PRELOAD ======================================= */
   function preload(){
     var CONC = 12, next = 0, done = 0, active = 0;
-    var REVEAL = 80;                          // buffer this many frames, then reveal (longer, smoother splash)
+    var REVEAL = 200;                         // buffer a big chunk so the splash lasts ~ the real load
     function advanceReady(){
       while(maxReady + 1 < TOTAL){
         var nx = images[maxReady + 1];
@@ -1067,6 +1068,10 @@
     }
     prevRender = renderFrame;
     updateProgress(s);
+    if(grainEl){                                    // fade the film overlay out before the specimens
+      var gf = targetFrame <= 430 ? 1 : (targetFrame >= 495 ? 0 : 1 - (targetFrame - 430) / 65);
+      grainEl.style.opacity = (GRAIN * gf).toFixed(3);
+    }
     updateOverlay();
     if(markEl){
       var sm = renderFrame > 4;                      // show wordmark once past the title
