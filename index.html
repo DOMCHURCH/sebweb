@@ -12,6 +12,11 @@
 <meta property="og:title" content="Sebastien Church — Neuroscience &amp; Mental Health" />
 <meta property="og:description" content="A cinematic portfolio. Scroll through the lens to explore Sebastien's research, experience, and certifications." />
 <meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Sebastien Church — Neuroscience &amp; Mental Health" />
+<meta name="twitter:image" content="og.jpg" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -163,9 +168,9 @@
   }
 
   #wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
-  .arrow-line{ stroke:var(--neon); stroke-width:.9; fill:none; opacity:.4; stroke-linecap:round;
+  .arrow-line{ stroke:var(--neon); stroke-width:.9; fill:none; opacity:.52; stroke-linecap:round;
     transition:stroke .25s var(--ease), opacity .25s var(--ease); }
-  .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.25; opacity:.72;
+  .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.25; opacity:.82;
     transition:stroke .25s var(--ease), opacity .25s var(--ease), stroke-width .25s var(--ease); }
   .arrow-dot{ fill:var(--neon-bright); opacity:.9; }
   .arrow{ filter:drop-shadow(0 0 3px var(--neon-glow)); transition:filter .25s var(--ease); }
@@ -206,17 +211,56 @@
   /* only the specimen hit-zones capture pointer events, and only when live */
   #overlay.active .zone{ pointer-events:auto; }
 
-  /* small persistent prompt so users know the field is interactive */
-  #prompt{
-    position:absolute; left:50%; transform:translateX(-50%);
-    bottom:calc(5.5vh + env(safe-area-inset-bottom)); z-index:6;
-    font-weight:300; letter-spacing:.4em; text-transform:uppercase;
-    font-size:.58rem; color:var(--ink-faint);
-    opacity:0; transition:opacity var(--dur) var(--ease);
+  /* specimen legend — glass chip bar that makes the hotspots discoverable */
+  #legend{
+    position:absolute; left:50%; transform:translateX(-50%) translateY(10px);
+    bottom:calc(4.6vh + env(safe-area-inset-bottom)); z-index:6;
+    display:flex; gap:6px; padding:7px;
+    border-radius:999px;
+    background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(150,180,255,.04));
+    -webkit-backdrop-filter:blur(18px) saturate(150%); backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(150,180,255,.22);
+    box-shadow:0 18px 50px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.14);
+    opacity:0; transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
     pointer-events:none;
   }
-  #overlay.active #prompt{ opacity:1; animation:pulse 3.4s ease-in-out infinite; }
-  @keyframes pulse{ 0%,100%{opacity:.28} 50%{opacity:.6} }
+  #overlay.active #legend{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  .leg-chip{
+    display:flex; align-items:center; gap:7px;
+    padding:8px 14px; border-radius:999px; cursor:pointer;
+    background:transparent; border:1px solid transparent; color:var(--ink-dim);
+    font-family:var(--font-sans); font-weight:400; font-size:.56rem;
+    letter-spacing:.16em; text-transform:uppercase; white-space:nowrap;
+    transition:background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  }
+  .leg-chip:hover, .leg-chip.hot{ background:rgba(120,160,255,.16); color:#fff; border-color:rgba(150,180,255,.42); }
+  .leg-chip:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:2px; }
+  .leg-num{ color:var(--neon-bright); font-weight:600; font-variant-numeric:tabular-nums; }
+  .leg-dot{ width:6px; height:6px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px var(--neon-glow); flex:0 0 auto; }
+  @media (max-width:680px){
+    #legend{ gap:3px; padding:6px; }
+    .leg-chip{ padding:9px 11px; gap:0; }
+    .leg-label{ display:none; }
+  }
+
+  /* glass wordmark / back-to-top badge (appears once past the intro) */
+  #mark{
+    position:fixed; top:14px; left:14px; z-index:7;
+    width:46px; height:46px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:600; font-size:.92rem; letter-spacing:.01em;
+    color:var(--ink); text-decoration:none;
+    background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(150,180,255,.05));
+    -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
+    border:1px solid rgba(150,180,255,.28);
+    box-shadow:0 12px 30px -12px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18);
+    opacity:0; transform:translateY(-10px) scale(.92); pointer-events:none;
+    transition:opacity .5s var(--ease), transform .5s var(--ease), background .25s var(--ease), border-color .25s var(--ease);
+  }
+  #mark.show{ opacity:1; transform:none; pointer-events:auto; }
+  #mark:hover{ background:rgba(120,160,255,.2); border-color:var(--neon-bright); }
+  #mark:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:3px; }
 
   /* ================= CARD (frosty-white glass modal) ============== */
   #scrim{
@@ -441,7 +485,7 @@
       transition-duration:1ms !important;
     }
     #hint .rail::after{ animation:none; }
-    #overlay.active #prompt{ animation:none; }
+    #legend, #mark{ transition-duration:1ms !important; }
     .arrow-ring{ animation:none !important; }
   }
 </style>
@@ -450,6 +494,7 @@
 
   <a href="#" id="skip" class="skip">Skip to portfolio</a>
   <div id="cursor" aria-hidden="true"></div>
+  <a id="mark" href="#top" aria-label="Back to top">SC</a>
 
   <!-- Scrollable height driver -->
   <div id="spacer" aria-hidden="true"></div>
@@ -497,7 +542,7 @@
       <svg id="wires" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
       <!-- labels, dots and zones are injected here by JS -->
     </div>
-    <div id="prompt">Select a specimen</div>
+    <div id="legend" role="group" aria-label="Choose a specimen"></div>
   </div>
 
   <!-- Scroll hint -->
@@ -646,6 +691,8 @@
   var hint = document.getElementById('hint');
   var scrim = document.getElementById('scrim');
   var card = document.getElementById('card');
+  var legendEl = document.getElementById('legend');
+  var markEl = document.getElementById('mark');
   var SVGNS = 'http://www.w3.org/2000/svg';
 
   /* ---------- State ------------------------------------------------- */
@@ -664,6 +711,7 @@
   var lockY = 0;
   var lastFocus = null;
   var hintShown = false;
+  var markShown = false;
   var lenis = null;
   var wheelOpts = { passive:false, capture:true };
 
@@ -835,11 +883,46 @@
         z.addEventListener('blur', function(){ setHot(idx, false); });
       })(ANNOT[i], i);
     }
+    buildLegend();
   }
 
   function setHot(idx, on){
     if(arrowEls[idx]) arrowEls[idx].g.classList.toggle('hot', on);
     if(labelEls[idx]) labelEls[idx].classList.toggle('hot', on);
+    if(legChips[idx]) legChips[idx].classList.toggle('hot', on);
+  }
+
+  // Specimen legend: a glass chip per specimen so the hotspots are discoverable.
+  var legChips = [];
+  function buildLegend(){
+    if(!legendEl || legendEl.childElementCount) return;
+    var short = ['Research','Field','Education','Volunteering','Certifications'];
+    for(var i=0;i<ANNOT.length;i++){
+      (function(idx){
+        var chip = document.createElement('button');
+        chip.type = 'button'; chip.className = 'leg-chip';
+        chip.setAttribute('aria-label', 'Open ' + (short[idx] || ('specimen ' + (idx+1))));
+        chip.innerHTML = '<span class="leg-num">' + ('0'+(idx+1)) + '</span>'
+                       + '<span class="leg-dot"></span>'
+                       + '<span class="leg-label">' + (short[idx] || '') + '</span>';
+        legendEl.appendChild(chip);
+        legChips.push(chip);
+        chip.addEventListener('click', function(){ openCard(idx); });
+        chip.addEventListener('mouseenter', function(){ setHot(idx, true); });
+        chip.addEventListener('mouseleave', function(){ setHot(idx, false); });
+        chip.addEventListener('focus', function(){ setHot(idx, true); });
+        chip.addEventListener('blur', function(){ setHot(idx, false); });
+      })(i);
+    }
+  }
+  // Stagger the reticles + labels in when the specimen slide arrives.
+  function revealAnnotations(){
+    if(!window.gsap || reduceMotion) return;
+    gsap.killTweensOf(labelEls);
+    gsap.fromTo(labelEls, { opacity:0 }, { opacity:1, duration:0.55, ease:'expo.out', stagger:0.07, overwrite:true });
+    var gs = []; for(var i=0;i<arrowEls.length;i++) gs.push(arrowEls[i].g);
+    gsap.killTweensOf(gs);
+    gsap.fromTo(gs, { opacity:0 }, { opacity:1, duration:0.6, ease:'expo.out', stagger:0.07, overwrite:true });
   }
 
   function layoutOverlay(){
@@ -926,6 +1009,10 @@
     if(q !== lastDrawn){ lastDrawn = q; drawBlended(renderFrame); }
     updateProgress(s);
     updateOverlay();
+    if(markEl){
+      var sm = renderFrame > 4;                      // show wordmark once past the title
+      if(sm !== markShown){ markShown = sm; markEl.classList.toggle('show', sm); }
+    }
   }
   // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
   // scroll / resize / frame-load input, so it doesn't burn CPU while idle (PERF-03).
@@ -956,7 +1043,7 @@
       overlayActive = active;
       overlay.classList.toggle('active', active);
       overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
-      if(active){ layoutOverlay(); }
+      if(active){ layoutOverlay(); revealAnnotations(); }
       else if(field.contains(document.activeElement) && document.activeElement.blur){ document.activeElement.blur(); }
       for(var zi=0; zi<zoneEls.length; zi++){ zoneEls[zi].tabIndex = active ? 0 : -1; }
     }
@@ -1158,6 +1245,14 @@
       if(lenis){ lenis.scrollTo(target, { immediate: reduceMotion }); }
       else { window.scrollTo({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' }); }
       setTimeout(function(){ if(zoneEls[0]) zoneEls[0].focus(); }, reduceMotion ? 90 : 800);
+    });
+  }
+  // glass wordmark -> back to the title
+  if(markEl){
+    markEl.addEventListener('click', function(ev){
+      ev.preventDefault();
+      if(lenis){ lenis.scrollTo(0, { immediate: reduceMotion }); }
+      else { window.scrollTo({ top:0, behavior: reduceMotion ? 'auto' : 'smooth' }); }
     });
   }
 
