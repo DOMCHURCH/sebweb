@@ -52,7 +52,7 @@
 
     --ease:        cubic-bezier(0.16, 1, 0.3, 1);  /* ease-out-expo feel */
     --dur:         400ms;
-    --grain:       .16;                             /* film overlay intensity (0 = off) */
+    --grain:       .3;                              /* film overlay intensity (0 = off) */
   }
 
   *,*::before,*::after{ box-sizing:border-box; }
@@ -100,6 +100,7 @@
   #grain{
     position:fixed; inset:0; z-index:3; pointer-events:none;
     background:url(img/film.png) center/100% 100%;
+    mix-blend-mode:screen;                          /* reads as part of the footage: shows in darks, hides in brights */
     opacity:0;
   }
 
