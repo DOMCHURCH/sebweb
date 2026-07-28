@@ -709,9 +709,12 @@
     function advanceReady(){
       while(maxReady + 1 < TOTAL){
         var nx = images[maxReady + 1];
-        if(nx && nx.complete && nx.naturalWidth){ maxReady++; } else break;
+        // advance past frames that loaded OR permanently failed, so one missing
+        // early frame can't wedge the loader forever (BUG-06).
+        if(nx && nx.complete && (nx.naturalWidth || nx.failed)){ maxReady++; } else break;
       }
       if(!ready && (maxReady + 1 >= REVEAL || done >= TOTAL)) reveal();
+      else if(ready) wake();     // newly-loaded frames may let a clamped scrub catch up
     }
     function bump(){
       loaded++;
@@ -726,13 +729,18 @@
       images[i] = img;
       function fin(){ active--; done++; bump(); advanceReady(); if(done < TOTAL) pump(); }
       img.onload = function(){ if(img.decode){ img.decode().then(fin, fin); } else { fin(); } };
-      img.onerror = fin;                       // never stall on a missing frame
+      img.onerror = function(){ img.failed = true; fin(); };  // mark + skip a missing frame
       img.src = framePath(i);
     }
     function pump(){ while(active < CONC && next < TOTAL){ active++; one(next++); } }
     pump();
+    setTimeout(function(){ if(!ready) reveal(); }, 8000);   // failsafe: never hang the splash
   }
 
+  function firstDrawable(){                     // lowest index with a real decoded frame
+    for(var i=0;i<TOTAL;i++){ var im=images[i]; if(im && im.complete && im.naturalWidth) return i; }
+    return 0;
+  }
   function reveal(){
     if(ready) return;                          // reveal once, as soon as the buffer is ready
     ready = true;
@@ -740,7 +748,7 @@
     loader.classList.add('done');
     canvas.classList.add('ready');
     layout();
-    draw(0);
+    draw(firstDrawable());                      // never reveal a black canvas on a dead frame 0
     // restore scroll position after an orientation-flip reload
     try {
       var sf = sessionStorage.getItem('sebFrame');
@@ -754,7 +762,7 @@
     // reveal scroll hint shortly after
     setTimeout(function(){ if(!hintShown){ hint.classList.add('show'); } }, 700);
     // Lenis drives renderTick via the GSAP ticker; otherwise use a plain rAF loop
-    if(!lenis){ requestAnimationFrame(rafLoop); }
+    if(!lenis){ wake(); }
   }
 
   /* ================= CANVAS SIZING + DRAW ========================= */
@@ -915,12 +923,11 @@
 
   function renderTick(){
     if(!ready) return;
-    if(!cardOpen){
-      var s = scrollTop();
-      var HOLD = startHold();                       // hold on the title before scrubbing begins
-      var f = s <= HOLD ? 0 : Math.floor((s - HOLD) / PPF);
-      targetFrame = clamp(f, 0, LAST);
-    }
+    if(cardOpen) return;                            // frame is frozen behind the card — skip work
+    var s = scrollTop();
+    var HOLD = startHold();                         // hold on the title before scrubbing begins
+    var f = s <= HOLD ? 0 : Math.floor((s - HOLD) / PPF);
+    targetFrame = clamp(f, 0, LAST);
     if(lenis || reduceMotion){
       renderFrame = targetFrame;                    // Lenis already smooths the scroll input
     } else {
@@ -932,7 +939,22 @@
     if(idx >= 0 && idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
     updateOverlay();
   }
-  function rafLoop(){ renderTick(); requestAnimationFrame(rafLoop); }
+  // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
+  // scroll / resize / frame-load input, so it doesn't burn CPU while idle (PERF-03).
+  // The Lenis path drives renderTick from the GSAP ticker and ignores this.
+  var looping = false;
+  function rafLoop(){
+    renderTick();
+    if(ready && !cardOpen && Math.abs(targetFrame - renderFrame) >= 0.4){
+      requestAnimationFrame(rafLoop);              // still catching up — keep going
+    } else {
+      looping = false;                             // settled -> sleep until woken
+    }
+  }
+  function wake(){
+    if(lenis || !ready || cardOpen || looping) return;
+    looping = true; requestAnimationFrame(rafLoop);
+  }
 
   function updateOverlay(){
     var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen
@@ -1011,6 +1033,7 @@
   function swapCard(i){
     curCard = i;
     if(GSAP()){
+      gsap.killTweensOf(card);                     // don't stack tweens on rapid arrow presses (PERF-06)
       gsap.to(card, { opacity:0, duration:0.15, ease:'power1.in', onComplete:function(){
         renderCard(i); card.scrollTop = 0;
         gsap.fromTo(card, { opacity:0, y:12 }, { opacity:1, y:0, duration:0.34, ease:'expo.out' });
@@ -1031,7 +1054,7 @@
     renderCard(i);
     card.scrollTop = 0;
     showCard();
-    setTimeout(function(){ card.focus(); }, 60);
+    setTimeout(function(){ if(cardOpen) card.focus(); }, 60);  // don't grab focus if closed first (BUG-04)
   }
   function closeCard(){
     if(!cardOpen) return;
@@ -1040,6 +1063,7 @@
     hideCard();
     unlockScroll();
     if(lastFocus && lastFocus.focus){ lastFocus.focus(); }
+    wake();                                        // resume the fallback loop to redraw
   }
   function nextCard(){ openCard((curCard + 1) % CARDS.length); }
 
@@ -1099,16 +1123,18 @@
       if(lenis) lenis.resize();
       layout();
       lastDrawn = -1;   // force redraw at new size
+      wake();
     }, 120);
   });
+  window.addEventListener('scroll', wake, { passive:true });   // wake the idle fallback loop
   window.addEventListener('orientationchange', function(){
-    setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; }, 250);
+    setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; wake(); }, 250);
   });
   // iOS/Android URL-bar show/hide fires visualViewport resize (not window resize)
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize', function(){
       clearTimeout(resizeT);
-      resizeT = setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; }, 120);
+      resizeT = setTimeout(function(){ setSpacer(); if(lenis) lenis.resize(); layout(); lastDrawn = -1; wake(); }, 120);
     });
   }
   // Orientation flip -> the OTHER frame tier fits better, so reload into it and
@@ -1116,10 +1142,16 @@
   // web: the Screen Orientation lock API needs fullscreen and iOS Safari does
   // not support it — so we adapt instead of fighting the browser.)
   var portraitMQ = window.matchMedia('(max-aspect-ratio: 1/1)');
-  function onFlip(e){
-    if(e.matches === portraitTier) return;           // current tier already correct
-    try { sessionStorage.setItem('sebFrame', targetFrame); } catch(err){}
-    location.reload();
+  var flipT;
+  function onFlip(){
+    // Debounce so dragging a window across the 1:1 boundary can't thrash reloads
+    // (BUG-07). Only reload once the aspect ratio settles on the other tier.
+    clearTimeout(flipT);
+    flipT = setTimeout(function(){
+      if(portraitMQ.matches === portraitTier) return;   // settled back — no reload needed
+      try { sessionStorage.setItem('sebFrame', targetFrame); } catch(err){}
+      location.reload();
+    }, 400);
   }
   if(portraitMQ.addEventListener){ portraitMQ.addEventListener('change', onFlip); }
   else if(portraitMQ.addListener){ portraitMQ.addListener(onFlip); }   // older Safari
@@ -1166,14 +1198,16 @@
           return;
         }
         status.className=''; status.textContent='Sending…'; btn.disabled=true;
+        var ctrl = ('AbortController' in window) ? new AbortController() : null;
+        var killT = ctrl ? setTimeout(function(){ ctrl.abort(); }, 12000) : null;  // never hang the button
         fetch('https://api.web3forms.com/submit', {
           method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
-          body: JSON.stringify(data)
+          body: JSON.stringify(data), signal: ctrl ? ctrl.signal : undefined
         }).then(function(r){ return r.json(); }).then(function(res){
           if(res.success){ status.className='ok'; status.textContent='Message sent — thank you.'; form.reset(); }
           else { status.className='err'; status.textContent=res.message || 'Something went wrong. Please try again.'; }
-          btn.disabled=false;
-        }).catch(function(){ status.className='err'; status.textContent='Network error — please try again.'; btn.disabled=false; });
+        }).catch(function(){ status.className='err'; status.textContent='Network error — please try again.'; })
+          .then(function(){ if(killT) clearTimeout(killT); btn.disabled=false; });  // always re-enable
       });
     }
     var section = document.getElementById('contact');
