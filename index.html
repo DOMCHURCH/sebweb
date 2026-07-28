@@ -994,11 +994,23 @@
   // Stagger the reticles + labels in when the specimen slide arrives.
   function revealAnnotations(){
     if(!window.gsap || reduceMotion) return;
+    for(var i=0;i<arrowEls.length;i++){
+      (function(a, idx){
+        var len = 120; try { len = a.line.getTotalLength() || 120; } catch(e){}
+        gsap.killTweensOf([a.g, a.line, a.ring, a.dot]);
+        gsap.set(a.g,    { opacity:0 });
+        gsap.set(a.line, { attr:{ 'stroke-dasharray':len, 'stroke-dashoffset':len } });   // hidden line
+        gsap.set(a.ring, { attr:{ r:0.6 } });                                              // collapsed reticle
+        gsap.set(a.dot,  { opacity:0 });
+        var d = idx * 0.07;
+        gsap.to(a.g,    { opacity:1, duration:0.22, ease:'sine.out', delay:d });
+        gsap.to(a.line, { attr:{ 'stroke-dashoffset':0 }, duration:0.46, ease:'power2.inOut', delay:d });   // draw toward the specimen
+        gsap.to(a.ring, { attr:{ r:6 }, duration:0.5, ease:'back.out(2.2)', delay:d + 0.26 });               // reticle locks on
+        gsap.to(a.dot,  { opacity:0.9, duration:0.28, ease:'sine.out', delay:d + 0.36 });
+      })(arrowEls[i], i);
+    }
     gsap.killTweensOf(labelEls);
-    gsap.fromTo(labelEls, { opacity:0 }, { opacity:1, duration:0.55, ease:'expo.out', stagger:0.07, overwrite:true });
-    var gs = []; for(var i=0;i<arrowEls.length;i++) gs.push(arrowEls[i].g);
-    gsap.killTweensOf(gs);
-    gsap.fromTo(gs, { opacity:0 }, { opacity:1, duration:0.6, ease:'expo.out', stagger:0.07, overwrite:true });
+    gsap.fromTo(labelEls, { opacity:0 }, { opacity:1, duration:0.5, ease:'expo.out', stagger:0.07, delay:0.18, overwrite:true });
   }
 
   function layoutOverlay(){
@@ -1130,8 +1142,8 @@
   }
 
   function updateOverlay(){
-    var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen
-                 && (scrollTop() < startHold() + SEQ + endHold());   // hand off to the contact section
+    var active = (targetFrame >= LAST - 3) && (maxReady >= LAST - 3) && !cardOpen
+                 && (scrollTop() < startHold() + SEQ + endHold());   // arrows land as the specimens arrive
     if(active !== overlayActive){
       overlayActive = active;
       overlay.classList.toggle('active', active);
