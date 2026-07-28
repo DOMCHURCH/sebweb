@@ -1456,5 +1456,53 @@
 
 })();
 </script>
+
+<!-- Perf diagnostic: only runs with ?debug in the URL. Reports GPU / hardware-
+     acceleration status + live FPS so we can see what THIS machine is actually doing. -->
+<script>
+(function(){
+  if(!/[?&]debug/.test(location.search)) return;
+  function gpu(){
+    try{
+      var c=document.createElement('canvas');
+      var gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+      if(!gl) return {r:'WebGL blocked/unavailable', soft:true};
+      var e=gl.getExtension('WEBGL_debug_renderer_info');
+      var r=e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);
+      var soft=/swiftshader|llvmpipe|software|basic render|microsoft basic|mesa offscreen/i.test(r||'');
+      return {r:r||'unknown', soft:soft};
+    }catch(err){ return {r:'error: '+err.message, soft:true}; }
+  }
+  var g=gpu();
+  var box=document.createElement('div');
+  box.style.cssText='position:fixed;top:8px;left:8px;z-index:99999;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;'
+    +'background:rgba(0,0,0,.86);color:#dfe;padding:10px 12px;border-radius:10px;max-width:340px;'
+    +'border:1px solid rgba(255,255,255,.18);white-space:pre-wrap;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)';
+  document.body.appendChild(box);
+  var verdict = g.soft
+    ? '⚠ SOFTWARE RENDERING (hardware acceleration OFF)\n   → this is the lag. Turn HW accel ON.'
+    : '✓ GPU hardware acceleration ON';
+  var frames=0,last=performance.now(),fps=0,minf=999,warm=performance.now();
+  function draw(){
+    var cv=document.getElementById('scene');
+    box.textContent =
+      verdict+'\n'+
+      'GPU: '+g.r+'\n'+
+      'FPS: '+fps+'   min: '+(minf===999?'…':minf)+'   (scroll to test)\n'+
+      'DPR '+(window.devicePixelRatio||1)+'  cores '+(navigator.hardwareConcurrency||'?')+
+        '  mem '+(navigator.deviceMemory||'?')+'GB\n'+
+      'canvas backing: '+(cv?cv.width:'?')+'×'+(cv?cv.height:'?');
+    box.style.borderColor = g.soft ? 'rgba(255,90,90,.8)' : 'rgba(120,224,214,.6)';
+    box.style.color = g.soft ? '#ffd7d7' : '#dfe';
+  }
+  function loop(t){
+    frames++;
+    if(t-last>=400){ fps=Math.round(frames*1000/(t-last)); frames=0; last=t;
+      if(t-warm>1500 && fps>0 && fps<minf) minf=fps; draw(); }
+    requestAnimationFrame(loop);
+  }
+  draw(); requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
