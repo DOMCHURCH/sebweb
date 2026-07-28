@@ -265,10 +265,9 @@
   /* ================= CARD (frosty-white glass modal) ============== */
   #scrim{
     position:fixed; inset:0; z-index:99;
-    background:radial-gradient(120% 120% at 50% 50%, rgba(6,10,28,.5), rgba(2,4,14,.74));
+    background:radial-gradient(120% 120% at 50% 50%, rgba(6,10,28,.66), rgba(2,4,14,.84));
     opacity:0; visibility:hidden;
     transition:opacity var(--dur) var(--ease), visibility var(--dur);
-    -webkit-backdrop-filter:blur(6px) saturate(115%); backdrop-filter:blur(6px) saturate(115%);
   }
   #scrim.show{ opacity:1; visibility:visible; }
 
@@ -280,9 +279,8 @@
     max-height:min(86vh, 860px);
     overflow-y:auto; overscroll-behavior:contain;
     background:
-      radial-gradient(130% 85% at 14% -12%, rgba(255,255,255,.55), transparent 46%),
-      linear-gradient(155deg, rgba(255,255,255,.60), rgba(224,235,255,.38));
-    -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+      radial-gradient(130% 85% at 14% -12%, rgba(255,255,255,.6), transparent 46%),
+      linear-gradient(155deg, rgba(255,255,255,.66), rgba(224,235,255,.5));
     border:1px solid rgba(255,255,255,.55);
     border-radius:22px;
     will-change:opacity, transform;
@@ -296,6 +294,16 @@
     opacity:0; visibility:hidden;
   }
   #card.show{ opacity:1; visibility:visible; }
+  /* Frost is applied ONLY once the card is settled & static (via .glass, added on
+     animation complete). Animating a backdrop-filter re-blurs the whole area every
+     frame and tanks perf — this keeps open/close/swap on the cheap path, then the
+     blur composites once over a static backdrop. */
+  #card.glass{
+    background:
+      radial-gradient(130% 85% at 14% -12%, rgba(255,255,255,.5), transparent 46%),
+      linear-gradient(155deg, rgba(255,255,255,.55), rgba(224,235,255,.36));
+    -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
+  }
   /* opaque fallback where backdrop-filter is unsupported */
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
     #card{ background:rgba(245,248,255,.98); }
@@ -521,7 +529,7 @@
 
       <div class="contact-side">
         <a class="cv-btn" href="Sebastien-Church-CV.pdf" download>Download CV</a>
-        <a class="contact-link" href="mailto:sebastienchurch@cmail.carleton.ca">sebastienchurch@cmail.carleton.ca</a>
+        <a class="contact-link" href="mailto:seb.church17@gmail.com">seb.church17@gmail.com</a>
         <a class="contact-link" href="https://www.linkedin.com/in/sebastien-church-08a0212a9" target="_blank" rel="noopener">LinkedIn</a>
       </div>
       <p class="contact-foot">Sebastien Church · Neuroscience &amp; Mental Health · Ottawa</p>
@@ -1092,20 +1100,25 @@
 
   function showCard(){
     scrim.classList.add('show');
+    card.classList.remove('glass');                // animate blur-free, then frost once settled
     card.classList.add('show');
     if(GSAP()){
       gsap.killTweensOf(card);
       gsap.fromTo(card,
         { opacity:0, y:22, xPercent:-50, yPercent:-50 },
-        { opacity:1, y:0, duration:0.42, ease:'expo.out' });
-      staggerCardContent(0.1);
+        { opacity:1, y:0, duration:0.36, ease:'expo.out',
+          onComplete:function(){ card.classList.add('glass'); } });
+      staggerCardContent(0.08);
+    } else {
+      card.classList.add('glass');
     }
   }
   function hideCard(){
     scrim.classList.remove('show');
+    card.classList.remove('glass');                // drop the blur before animating out
     if(GSAP()){
       gsap.killTweensOf(card);
-      gsap.to(card, { opacity:0, y:14, duration:0.24, ease:'power2.in',
+      gsap.to(card, { opacity:0, y:14, duration:0.2, ease:'power2.in',
         onComplete:function(){ card.classList.remove('show'); } });
     } else {
       card.classList.remove('show');
@@ -1114,11 +1127,13 @@
   function swapCard(i){
     curCard = i;
     if(GSAP()){
+      card.classList.remove('glass');              // no per-frame re-blur during the swap
       gsap.killTweensOf(card);                     // don't stack tweens on rapid arrow presses (PERF-06)
-      gsap.to(card, { opacity:0, duration:0.15, ease:'power1.in', onComplete:function(){
+      gsap.to(card, { opacity:0, duration:0.13, ease:'power1.in', onComplete:function(){
         renderCard(i); card.scrollTop = 0;
-        gsap.fromTo(card, { opacity:0, y:12 }, { opacity:1, y:0, duration:0.34, ease:'expo.out' });
-        staggerCardContent(0.06);
+        gsap.fromTo(card, { opacity:0 }, { opacity:1, duration:0.3, ease:'expo.out',
+          onComplete:function(){ card.classList.add('glass'); } });
+        staggerCardContent(0.04);
       }});
     } else {
       renderCard(i); card.scrollTop = 0;
