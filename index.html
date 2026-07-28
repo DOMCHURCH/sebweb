@@ -193,17 +193,15 @@
   }
 
   #wires{ position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
-  .arrow-line{ stroke:var(--neon); stroke-width:1; fill:none; opacity:.5; stroke-linecap:round;
-    transition:stroke var(--dur) var(--ease), opacity var(--dur) var(--ease); }
-  .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.5; opacity:.8;
-    transition:stroke var(--dur) var(--ease), opacity var(--dur) var(--ease), stroke-width var(--dur) var(--ease);
-    animation:reticle 3.4s ease-in-out infinite; }
-  .arrow-dot{ fill:var(--neon-bright); opacity:.85; }
-  .arrow{ filter:drop-shadow(0 0 4px var(--neon-glow)); transition:filter var(--dur) var(--ease); }
-  .arrow.hot{ filter:drop-shadow(0 0 10px var(--neon)); }
-  .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:.9; }
-  .arrow.hot .arrow-ring{ stroke:var(--neon-bright); opacity:1; stroke-width:2; animation:none; }
-  @keyframes reticle{ 0%,100%{ opacity:.5 } 50%{ opacity:.9 } }
+  .arrow-line{ stroke:var(--neon); stroke-width:.9; fill:none; opacity:.4; stroke-linecap:round;
+    transition:stroke .25s var(--ease), opacity .25s var(--ease); }
+  .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.25; opacity:.72;
+    transition:stroke .25s var(--ease), opacity .25s var(--ease), stroke-width .25s var(--ease); }
+  .arrow-dot{ fill:var(--neon-bright); opacity:.9; }
+  .arrow{ filter:drop-shadow(0 0 3px var(--neon-glow)); transition:filter .25s var(--ease); }
+  .arrow.hot{ filter:drop-shadow(0 0 8px var(--neon)); }
+  .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:.85; }
+  .arrow.hot .arrow-ring{ stroke:var(--neon-bright); opacity:1; stroke-width:1.75; }
 
   .label{
     position:absolute; pointer-events:none;
@@ -268,9 +266,10 @@
     max-height:min(86vh, 860px);
     overflow-y:auto; overscroll-behavior:contain;
     background:linear-gradient(160deg, rgba(255,255,255,.82), rgba(235,242,255,.66));
-    -webkit-backdrop-filter:blur(30px) saturate(155%); backdrop-filter:blur(30px) saturate(155%);
+    -webkit-backdrop-filter:blur(14px) saturate(120%); backdrop-filter:blur(14px) saturate(120%);
     border:1px solid var(--card-border);
     border-radius:18px;
+    will-change:opacity, transform;
     box-shadow:var(--card-shadow), inset 0 1px 0 rgba(255,255,255,.9);
     color:var(--card-ink);
     padding:28px clamp(22px,4vw,36px) 54px;
@@ -373,7 +372,7 @@
   #contact-form{
     text-align:left;
     background:rgba(255,255,255,.055);
-    -webkit-backdrop-filter:blur(22px) saturate(140%); backdrop-filter:blur(22px) saturate(140%);
+    -webkit-backdrop-filter:blur(12px) saturate(120%); backdrop-filter:blur(12px) saturate(120%);
     border:1px solid rgba(150,180,255,.18); border-radius:18px;
     box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
     padding:clamp(20px,4vw,32px);
@@ -685,7 +684,7 @@
   var coverRect = { x:0, y:0, w:0, h:0 };
   var frameW = portraitTier ? 1000 : 1600;   // fallback until first img loads
   var frameH = portraitTier ? 1776 : 894;
-  var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  var dpr = Math.min(window.devicePixelRatio || 1, 1.25);
   var overlayActive = false;
   var cardOpen = false;
   var curCard = 0;
@@ -760,8 +759,8 @@
 
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
-    // capped at 1.5x: source frames are ~1600px, so extra device pixels are wasted fill (perf)
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    // capped at 1.25x: fewer device pixels to fill each frame -> smoother scrub
+    dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
@@ -769,7 +768,7 @@
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'medium';
+    ctx.imageSmoothingQuality = 'low';
   }
 
   function computeCover(){
@@ -816,8 +815,8 @@
         var g = document.createElementNS(SVGNS,'g');
         g.setAttribute('class','arrow'); g.setAttribute('data-i', idx);
         var line = document.createElementNS(SVGNS,'path'); line.setAttribute('class','arrow-line');
-        var ring2 = document.createElementNS(SVGNS,'circle'); ring2.setAttribute('class','arrow-ring'); ring2.setAttribute('r','7');
-        var dot  = document.createElementNS(SVGNS,'circle'); dot.setAttribute('class','arrow-dot'); dot.setAttribute('r','2.2');
+        var ring2 = document.createElementNS(SVGNS,'circle'); ring2.setAttribute('class','arrow-ring'); ring2.setAttribute('r','6');
+        var dot  = document.createElementNS(SVGNS,'circle'); dot.setAttribute('class','arrow-dot'); dot.setAttribute('r','1.3');
         g.appendChild(line); g.appendChild(ring2); g.appendChild(dot);
         wires.appendChild(g);
         arrowEls.push({ g:g, line:line, ring:ring2, dot:dot });
@@ -880,11 +879,11 @@
 
       // leader line runs from the label base to just outside the specimen reticle
       var ang = Math.atan2(sy-by, sx-bx);
-      var stop = 11;
+      var stop = 9;
       var ex = sx - Math.cos(ang)*stop, ey = sy - Math.sin(ang)*stop;
       el.line.setAttribute('d', 'M '+bx+' '+by+' L '+ex+' '+ey);
-      el.dot.setAttribute('cx', bx); el.dot.setAttribute('cy', by);
-      el.ring.setAttribute('cx', sx); el.ring.setAttribute('cy', sy);   // reticle centered on the specimen
+      el.ring.setAttribute('cx', sx); el.ring.setAttribute('cy', sy);   // target ring on the specimen
+      el.dot.setAttribute('cx', sx); el.dot.setAttribute('cy', sy);     // precise center point
 
       // label placement relative to its leader base
       var lab = labelEls[i];
@@ -936,7 +935,8 @@
   function rafLoop(){ renderTick(); requestAnimationFrame(rafLoop); }
 
   function updateOverlay(){
-    var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen;
+    var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen
+                 && (scrollTop() < startHold() + SEQ + viewH() * 1.3);   // hand off to the contact section
     if(active !== overlayActive){
       overlayActive = active;
       overlay.classList.toggle('active', active);
@@ -993,16 +993,16 @@
     if(GSAP()){
       gsap.killTweensOf(card);
       gsap.fromTo(card,
-        { opacity:0, y:28, scale:0.96, xPercent:-50, yPercent:-50 },
-        { opacity:1, y:0, scale:1, duration:0.55, ease:'expo.out' });
-      staggerCardContent(0.12);
+        { opacity:0, y:22, xPercent:-50, yPercent:-50 },
+        { opacity:1, y:0, duration:0.42, ease:'expo.out' });
+      staggerCardContent(0.1);
     }
   }
   function hideCard(){
     scrim.classList.remove('show');
     if(GSAP()){
       gsap.killTweensOf(card);
-      gsap.to(card, { opacity:0, y:16, scale:0.98, duration:0.28, ease:'power2.in',
+      gsap.to(card, { opacity:0, y:14, duration:0.24, ease:'power2.in',
         onComplete:function(){ card.classList.remove('show'); } });
     } else {
       card.classList.remove('show');
