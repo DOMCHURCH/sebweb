@@ -32,9 +32,9 @@
      ============================================================ */
 
   :root{
-    --neon:        #1a4fd6;               /* spec neon dark blue           */
-    --neon-bright: #5b8cff;               /* hover / active intensification */
-    --neon-glow:   rgba(26, 79, 214, .8);
+    --neon:        #12b8b0;               /* spec neon dark blue           */
+    --neon-bright: #5eeadd;               /* hover / active intensification */
+    --neon-glow:   rgba(18, 184, 176, .8);
     --ink:         #ffffff;
     --ink-dim:     rgba(255,255,255,.62);
     --ink-faint:   rgba(255,255,255,.34);
@@ -44,8 +44,8 @@
     --card-ink:      #0c1230;
     --card-ink-dim:  rgba(14,20,45,.74);
     --card-ink-faint:rgba(14,20,45,.50);
-    --card-accent:   #1a4fd6;
-    --card-accent-2: #163fb0;
+    --card-accent:   #0d9488;
+    --card-accent-2: #0b7a72;
 
     --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --font-sans:    'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -72,7 +72,7 @@
   button{ font-family:inherit; }
 
   /* ---- luxury micro-details ---- */
-  ::selection{ background:rgba(26,79,214,.42); color:#fff; }
+  ::selection{ background:rgba(18,184,176,.42); color:#fff; }
   *{ scrollbar-width:thin; scrollbar-color:rgba(120,150,220,.35) transparent; }
   ::-webkit-scrollbar{ width:7px; height:7px; }
   ::-webkit-scrollbar-thumb{ background:rgba(120,150,220,.3); border-radius:4px; }
@@ -143,7 +143,7 @@
   }
   #loader.done{ opacity:0; visibility:hidden; }
   .l-mark{ font-family:var(--font-display); font-weight:500; letter-spacing:.05em; font-size:clamp(1.7rem,4vw,2.6rem);
-    color:#fff; background:linear-gradient(180deg,#fff 45%,#aec4f2 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    color:#fff; background:linear-gradient(180deg,#fff 45%,#9fe8de 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
   .l-sub{ font-family:var(--font-sans); font-weight:300; letter-spacing:.42em; text-transform:uppercase; font-size:.58rem; color:var(--ink-faint); margin-top:-.7rem; }
   .l-track{ width:min(220px,54vw); height:2px; margin-top:.5rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
   .l-bar{ height:100%; width:0; background:linear-gradient(90deg,var(--neon),var(--neon-bright)); box-shadow:0 0 10px var(--neon-glow); transition:width .3s var(--ease); }
@@ -242,9 +242,9 @@
     bottom:calc(4.6vh + env(safe-area-inset-bottom)); z-index:6;
     display:flex; gap:6px; padding:7px;
     border-radius:999px;
-    background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(150,180,255,.04));
+    background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(120,224,214,.04));
     -webkit-backdrop-filter:blur(18px) saturate(150%); backdrop-filter:blur(18px) saturate(150%);
-    border:1px solid rgba(150,180,255,.22);
+    border:1px solid rgba(120,224,214,.22);
     box-shadow:0 18px 50px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.14);
     opacity:0; transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
     pointer-events:none;
@@ -259,7 +259,7 @@
     transition:background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
     touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   }
-  .leg-chip:hover, .leg-chip.hot{ background:rgba(120,160,255,.16); color:#fff; border-color:rgba(150,180,255,.42); }
+  .leg-chip:hover, .leg-chip.hot{ background:rgba(88,214,204,.16); color:#fff; border-color:rgba(120,224,214,.42); }
   .leg-chip:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:2px; }
   .leg-num{ color:var(--neon-bright); font-weight:600; font-variant-numeric:tabular-nums; }
   .leg-dot{ width:6px; height:6px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px var(--neon-glow); flex:0 0 auto; }
@@ -276,15 +276,15 @@
     display:flex; align-items:center; justify-content:center;
     font-family:var(--font-display); font-weight:600; font-size:.92rem; letter-spacing:.01em;
     color:var(--ink); text-decoration:none;
-    background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(150,180,255,.05));
+    background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(120,224,214,.05));
     -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
-    border:1px solid rgba(150,180,255,.28);
+    border:1px solid rgba(120,224,214,.28);
     box-shadow:0 12px 30px -12px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18);
     opacity:0; transform:translateY(-10px) scale(.92); pointer-events:none;
     transition:opacity .5s var(--ease), transform .5s var(--ease), background .25s var(--ease), border-color .25s var(--ease);
   }
   #mark.show{ opacity:1; transform:none; pointer-events:auto; }
-  #mark:hover{ background:rgba(120,160,255,.2); border-color:var(--neon-bright); }
+  #mark:hover{ background:rgba(88,214,204,.2); border-color:var(--neon-bright); }
   #mark:focus-visible{ outline:2px solid var(--neon-bright); outline-offset:3px; }
 
   /* ================= CARD (frosty-white glass modal) ============== */
@@ -302,7 +302,7 @@
     z-index:100;
     width:min(680px, calc(100vw - 32px));
     max-height:min(86vh, 860px);
-    overflow-y:auto; overscroll-behavior:contain;
+    display:flex; flex-direction:column; overflow:hidden;
     background:
       radial-gradient(130% 85% at 14% -12%, rgba(255,255,255,.6), transparent 46%),
       linear-gradient(155deg, rgba(255,255,255,.66), rgba(224,235,255,.5));
@@ -315,8 +315,12 @@
       inset 0 1px 0 rgba(255,255,255,.95),
       inset 0 -1px 0 rgba(120,150,220,.16);
     color:var(--card-ink);
-    padding:28px clamp(22px,4vw,36px) 54px;
     opacity:0; visibility:hidden;
+  }
+  .card-scroll{
+    flex:1 1 auto; min-height:0;
+    overflow-y:auto; overscroll-behavior:contain;
+    padding:28px clamp(22px,4vw,36px) 54px;
   }
   #card.show{ opacity:1; visibility:visible; }
   /* Frost is applied ONLY once the card is settled & static (via .glass, added on
@@ -355,11 +359,11 @@
     letter-spacing:.16em; text-transform:uppercase;
     font-size:clamp(1.2rem,2.7vw,1.55rem);
     margin:0 0 1.2rem; padding-bottom:1.1rem; color:var(--card-ink);
-    border-bottom:1px solid rgba(26,79,214,.16);
+    border-bottom:1px solid rgba(18,184,176,.16);
   }
   .entry{ margin:0 0 1.5rem; padding-left:16px; position:relative; }
   .entry::before{ content:""; position:absolute; left:0; top:3px; bottom:3px; width:2px; border-radius:2px;
-    background:linear-gradient(180deg, var(--card-accent), rgba(26,79,214,.12)); }
+    background:linear-gradient(180deg, var(--card-accent), rgba(18,184,176,.12)); }
   .entry:last-child{ margin-bottom:0; }
   .entry-head{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; flex-wrap:wrap; }
   .entry-role{ font-weight:600; font-size:.95rem; letter-spacing:.01em; color:var(--card-ink); }
@@ -375,12 +379,12 @@
   .tag{
     font-weight:500; font-size:.66rem; letter-spacing:.10em;
     padding:6px 12px; border-radius:999px;
-    background:rgba(26,79,214,.08);
-    border:1px solid rgba(26,79,214,.24);
+    background:rgba(18,184,176,.08);
+    border:1px solid rgba(18,184,176,.24);
     color:var(--card-accent-2);
     transition:background .2s var(--ease), border-color .2s var(--ease);
   }
-  .tag:hover{ background:rgba(26,79,214,.14); border-color:rgba(26,79,214,.42); }
+  .tag:hover{ background:rgba(18,184,176,.14); border-color:rgba(18,184,176,.42); }
 
   .icon-btn{
     position:absolute; width:44px; height:44px;
@@ -410,14 +414,14 @@
     padding:12vh 20px calc(9vh + env(safe-area-inset-bottom));
     color:var(--ink); overflow:hidden;
     background:
-      radial-gradient(130% 90% at 50% 118%, rgba(26,79,214,.24), transparent 60%),
+      radial-gradient(130% 90% at 50% 118%, rgba(18,184,176,.24), transparent 60%),
       radial-gradient(120% 100% at 50% -10%, rgba(22,30,66,.45), transparent 55%),
       #04060f;
   }
   /* faint microscope-slide grid echo */
   #contact::before{
     content:""; position:absolute; inset:0; pointer-events:none; opacity:.6;
-    background-image:radial-gradient(rgba(130,160,255,.06) 1px, transparent 1.4px);
+    background-image:radial-gradient(rgba(96,220,210,.06) 1px, transparent 1.4px);
     background-size:26px 26px;
     -webkit-mask-image:radial-gradient(120% 85% at 50% 55%, #000 25%, transparent 78%);
             mask-image:radial-gradient(120% 85% at 50% 55%, #000 25%, transparent 78%);
@@ -427,7 +431,7 @@
   .contact-title{
     font-family:var(--font-display); font-weight:500; font-size:clamp(2.3rem,7.2vw,3.6rem);
     margin:0 0 1.1rem; letter-spacing:-.01em; line-height:1.04; color:#fff;
-    background:linear-gradient(180deg, #ffffff 42%, #aec4f2 100%);
+    background:linear-gradient(180deg, #ffffff 42%, #9fe8de 100%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
   }
   .contact-lead{ font-weight:300; font-size:.95rem; line-height:1.7; color:var(--ink-dim); max-width:46ch; margin:0 auto 2.4rem; }
@@ -436,13 +440,13 @@
     text-align:left;
     background:
       radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,.09), transparent 50%),
-      linear-gradient(160deg, rgba(255,255,255,.07), rgba(150,180,255,.03));
+      linear-gradient(160deg, rgba(255,255,255,.07), rgba(120,224,214,.03));
     -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
-    border:1px solid rgba(150,180,255,.24); border-radius:20px;
+    border:1px solid rgba(120,224,214,.24); border-radius:20px;
     box-shadow:
       0 30px 80px -20px rgba(0,0,0,.6),
       inset 0 1px 0 rgba(255,255,255,.14),
-      inset 0 0 44px rgba(26,79,214,.06);
+      inset 0 0 44px rgba(18,184,176,.06);
     padding:clamp(20px,4vw,32px);
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -452,21 +456,21 @@
   .field label{ display:block; font-weight:500; letter-spacing:.2em; text-transform:uppercase; font-size:.56rem; color:var(--ink-dim); margin-bottom:9px; }
   .field input, .field textarea{
     width:100%; font-family:inherit; font-size:15px; font-weight:300; color:#fff;
-    background:rgba(255,255,255,.04); border:1px solid rgba(150,180,255,.16);
+    background:rgba(255,255,255,.04); border:1px solid rgba(120,224,214,.16);
     border-radius:12px; padding:13px 16px; outline:none; resize:vertical;
     transition:border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease);
   }
   .field input::placeholder, .field textarea::placeholder{ color:rgba(255,255,255,.26); }
-  .field input:focus, .field textarea:focus{ border-color:var(--neon-bright); background:rgba(255,255,255,.07); box-shadow:0 0 0 3px rgba(26,79,214,.22); }
+  .field input:focus, .field textarea:focus{ border-color:var(--neon-bright); background:rgba(255,255,255,.07); box-shadow:0 0 0 3px rgba(18,184,176,.22); }
   .send-btn{
     width:100%; margin-top:8px; cursor:pointer;
     font-weight:600; letter-spacing:.2em; text-transform:uppercase; font-size:.7rem; color:#fff;
     background:linear-gradient(120deg, var(--neon), var(--neon-bright));
     border:0; border-radius:12px; padding:15px 18px;
-    box-shadow:0 8px 24px rgba(26,79,214,.4), inset 0 1px 0 rgba(255,255,255,.25);
+    box-shadow:0 8px 24px rgba(18,184,176,.4), inset 0 1px 0 rgba(255,255,255,.25);
     transition:transform .2s var(--ease), box-shadow .2s var(--ease), opacity .2s;
   }
-  .send-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 30px rgba(26,79,214,.55); }
+  .send-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 30px rgba(18,184,176,.55); }
   .send-btn:active{ transform:translateY(0) scale(.99); }
   .send-btn:disabled{ opacity:.6; cursor:default; }
   #form-status{ min-height:1.2em; margin:14px 2px 0; font-size:.78rem; font-weight:300; }
@@ -478,16 +482,16 @@
     display:inline-flex; align-items:center; text-decoration:none;
     font-weight:500; letter-spacing:.16em; text-transform:uppercase; font-size:.64rem; color:#fff;
     padding:11px 22px; border-radius:999px;
-    border:1px solid rgba(150,180,255,.5); background:rgba(120,160,255,.08);
+    border:1px solid rgba(120,224,214,.5); background:rgba(88,214,204,.08);
     transition:background .25s var(--ease), border-color .25s var(--ease), transform .2s var(--ease);
   }
-  .cv-btn:hover{ background:rgba(120,160,255,.16); border-color:var(--neon-bright); transform:translateY(-1px); }
+  .cv-btn:hover{ background:rgba(88,214,204,.16); border-color:var(--neon-bright); transform:translateY(-1px); }
   .contact-link{ color:var(--ink-dim); text-decoration:none; font-size:.8rem; font-weight:300; border-bottom:1px solid transparent; transition:color .25s, border-color .25s; }
-  .contact-link:hover{ color:#fff; border-color:rgba(150,180,255,.5); }
+  .contact-link:hover{ color:#fff; border-color:rgba(120,224,214,.5); }
   .contact-foot{ margin-top:3rem; font-size:.6rem; font-weight:300; letter-spacing:.3em; text-transform:uppercase; color:var(--ink-faint); }
   .contact-credit{ margin-top:.85rem; font-size:.58rem; font-weight:300; letter-spacing:.12em; color:rgba(255,255,255,.28); }
   .contact-credit a{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; transition:color .25s, border-color .25s; }
-  .contact-credit a:hover{ color:rgba(255,255,255,.62); border-color:rgba(150,180,255,.4); }
+  .contact-credit a:hover{ color:rgba(255,255,255,.62); border-color:rgba(120,224,214,.4); }
   @media (max-width:480px){ .contact-side{ flex-direction:column; gap:14px; } }
 
   /* ================= ACCESSIBLE / NO-JS FALLBACK =================== */
@@ -514,7 +518,8 @@
   @media (max-width:768px){
     .label{ font-size:.6rem; letter-spacing:.2em; }
     .zone{ width:64px; height:64px; }
-    #card{ padding:22px 18px 30px; border-radius:14px; }
+    #card{ border-radius:14px; }
+    .card-scroll{ padding:22px 18px 30px; }
     .card-title{ letter-spacing:.12em; }
   }
   @media (max-width:390px){
@@ -609,12 +614,14 @@
 
   <!-- Card modal -->
   <div id="scrim"></div>
-  <div id="card" role="dialog" aria-modal="true" aria-labelledby="card-title-el" tabindex="-1" data-lenis-prevent>
+  <div id="card" role="dialog" aria-modal="true" aria-labelledby="card-title-el" tabindex="-1">
     <button id="card-close" class="icon-btn" aria-label="Close">&times;</button>
-    <div class="card-media" id="card-media"></div>
-    <p class="card-kicker" id="card-kicker"></p>
-    <h2 class="card-title" id="card-title-el"></h2>
-    <div id="card-body"></div>
+    <div class="card-scroll" id="card-scroll" data-lenis-prevent>
+      <div class="card-media" id="card-media"></div>
+      <p class="card-kicker" id="card-kicker"></p>
+      <h2 class="card-title" id="card-title-el"></h2>
+      <div id="card-body"></div>
+    </div>
     <div class="card-count" id="card-count"></div>
     <button id="card-next" class="icon-btn" aria-label="Next section">&rsaquo;</button>
   </div>
@@ -750,6 +757,7 @@
   var hint = document.getElementById('hint');
   var scrim = document.getElementById('scrim');
   var card = document.getElementById('card');
+  var cardScroll = document.getElementById('card-scroll');
   var legendEl = document.getElementById('legend');
   var markEl = document.getElementById('mark');
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -1207,13 +1215,13 @@
       card.classList.remove('glass');              // no per-frame re-blur during the swap
       gsap.killTweensOf(card);                     // don't stack tweens on rapid arrow presses (PERF-06)
       gsap.to(card, { opacity:0, duration:0.13, ease:'power1.in', onComplete:function(){
-        renderCard(i); card.scrollTop = 0;
+        renderCard(i); cardScroll.scrollTop = 0;
         gsap.fromTo(card, { opacity:0 }, { opacity:1, duration:0.3, ease:'expo.out',
           onComplete:function(){ card.classList.add('glass'); } });
         staggerCardContent(0.04);
       }});
     } else {
-      renderCard(i); card.scrollTop = 0;
+      renderCard(i); cardScroll.scrollTop = 0;
     }
   }
 
@@ -1225,7 +1233,7 @@
     cardOpen = true;
     body.classList.add('card-open');
     renderCard(i);
-    card.scrollTop = 0;
+    cardScroll.scrollTop = 0;
     showCard();
     setTimeout(function(){ if(cardOpen) card.focus(); }, 60);  // don't grab focus if closed first (BUG-04)
   }
