@@ -858,11 +858,17 @@
 
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
-    // Source frames are only ~1600px wide, so rendering past that buys no sharpness.
-    // Motion now renders ~1:1 with CSS pixels (crisp — was 0.8x and visibly soft);
-    // idle bumps to 2x for stills. High smoothing is cheap at this near-1:1 scale.
-    dpr = idleHiRes ? Math.min(window.devicePixelRatio || 1, 2)
-                    : Math.min(window.devicePixelRatio || 1, 1.3);
+    var dev = window.devicePixelRatio || 1;
+    // Real detail is capped by the source frame (~1600px desktop / ~1000px portrait).
+    // `fit` = the dpr at which the canvas exactly matches that source. Idle targets it
+    // so stills are as crisp as the asset allows — this is what finally makes hi-dpi
+    // PHONES sharp (the old min(dpr,2) under-rendered the 1000px portrait source).
+    // Standard desktops are unchanged (device-pixel capped). Motion stays lighter (~1:1
+    // with CSS px) for a smooth scrub — was 0.8x and visibly soft. High smoothing is
+    // cheap at these near-1:1 scales.
+    var fit = Math.max(frameW / viewW(), frameH / viewH());
+    dpr = idleHiRes ? Math.min(dev, Math.max(2, fit), 3)
+                    : Math.min(dev, 1.3);
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
@@ -1100,7 +1106,7 @@
     // adaptive resolution: drop to fast 0.8x the instant we move, crisp when settled
     if(Math.abs(renderFrame - prevRender) > 0.01){
       if(idleHiRes){ idleHiRes = false; sizeCanvas(); computeCover(); lastDrawn = -1; }
-      clearTimeout(idleT); idleT = setTimeout(goHiRes, 220);
+      clearTimeout(idleT); idleT = setTimeout(goHiRes, 150);   // snap stills to full-res sooner after scroll stops
     }
     // redraw only when the quantized blended position actually moves (6 steps/frame)
     var q = Math.round(renderFrame * 6);
