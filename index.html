@@ -792,7 +792,7 @@
   function startHold(){ return Math.round(viewH() * 0.6); }  // title lingers ~0.6 screens before scrubbing
   // dwell on the final specimen slide — longer on phones (portrait), where a fast
   // swipe's momentum blows through the specimens otherwise.
-  function endHold(){ return Math.round(viewH() * (portraitTier ? 2.8 : 1.5)); }
+  function endHold(){ return Math.round(viewH() * (portraitTier ? 4 : 2.5)); }
 
   /* ================= PRELOAD ======================================= */
   function preload(){
