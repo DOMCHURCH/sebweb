@@ -71,6 +71,15 @@
   img{ display:block; }
   button{ font-family:inherit; }
 
+  /* ---- luxury micro-details ---- */
+  ::selection{ background:rgba(26,79,214,.42); color:#fff; }
+  *{ scrollbar-width:thin; scrollbar-color:rgba(120,150,220,.35) transparent; }
+  ::-webkit-scrollbar{ width:7px; height:7px; }
+  ::-webkit-scrollbar-thumb{ background:rgba(120,150,220,.3); border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover{ background:rgba(120,150,220,.55); }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  :focus-visible{ outline-color:var(--neon-bright); }
+
   /* --- The scroll spacer: gives the page its scrollable height --------- */
   #spacer{ position:relative; width:1px; height:100vh; pointer-events:none; }
 
@@ -133,7 +142,8 @@
     transition:opacity .8s var(--ease), visibility .8s;
   }
   #loader.done{ opacity:0; visibility:hidden; }
-  .l-mark{ font-family:var(--font-display); font-weight:500; letter-spacing:.05em; font-size:clamp(1.7rem,4vw,2.6rem); color:#fff; }
+  .l-mark{ font-family:var(--font-display); font-weight:500; letter-spacing:.05em; font-size:clamp(1.7rem,4vw,2.6rem);
+    color:#fff; background:linear-gradient(180deg,#fff 45%,#aec4f2 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
   .l-sub{ font-family:var(--font-sans); font-weight:300; letter-spacing:.42em; text-transform:uppercase; font-size:.58rem; color:var(--ink-faint); margin-top:-.7rem; }
   .l-track{ width:min(220px,54vw); height:2px; margin-top:.5rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
   .l-bar{ height:100%; width:0; background:linear-gradient(90deg,var(--neon),var(--neon-bright)); box-shadow:0 0 10px var(--neon-glow); transition:width .3s var(--ease); }
@@ -414,7 +424,12 @@
   }
   .contact-inner{ position:relative; width:min(560px,100%); text-align:center; }
   .contact-kicker{ font-weight:400; letter-spacing:.42em; text-transform:uppercase; font-size:.6rem; color:var(--neon-bright); margin:0 0 1rem; }
-  .contact-title{ font-family:var(--font-display); font-weight:500; font-size:clamp(2.2rem,7vw,3.4rem); margin:0 0 1rem; }
+  .contact-title{
+    font-family:var(--font-display); font-weight:500; font-size:clamp(2.3rem,7.2vw,3.6rem);
+    margin:0 0 1.1rem; letter-spacing:-.01em; line-height:1.04; color:#fff;
+    background:linear-gradient(180deg, #ffffff 42%, #aec4f2 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
   .contact-lead{ font-weight:300; font-size:.95rem; line-height:1.7; color:var(--ink-dim); max-width:46ch; margin:0 auto 2.4rem; }
 
   #contact-form{
@@ -505,6 +520,12 @@
   @media (max-width:390px){
     .label{ font-size:.54rem; letter-spacing:.16em; }
     .entry-head{ gap:4px; }
+  }
+  /* Portrait / phones: declutter. The band labels + tappable specimens are the
+     affordance; the legend bar and corner wordmark only collide with them here. */
+  @media (max-aspect-ratio:1/1){
+    #legend{ display:none; }
+    #mark{ display:none; }
   }
 
   /* ================= REDUCED MOTION ================================ */
