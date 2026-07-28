@@ -52,7 +52,6 @@
 
     --ease:        cubic-bezier(0.16, 1, 0.3, 1);  /* ease-out-expo feel */
     --dur:         400ms;
-    --grain:       .3;                              /* film overlay intensity (0 = off) */
   }
 
   *,*::before,*::after{ box-sizing:border-box; }
@@ -94,15 +93,6 @@
     opacity:0; transition:opacity 900ms var(--ease);
   }
   #scene.ready ~ #vignette{ opacity:1; }
-
-  /* cinematic film-frame overlay — static alpha, no blend mode; sits BEHIND the UI
-     (over the canvas only) and JS fades it out before the specimen slide. */
-  #grain{
-    position:fixed; inset:0; z-index:3; pointer-events:none;
-    background:url(img/film.png) center/100% 100%;
-    mix-blend-mode:screen;                          /* reads as part of the footage: shows in darks, hides in brights */
-    opacity:0;
-  }
 
   /* ================= CUSTOM CURSOR — minimal dot (fine pointer only) ===
      No lerp, no perpetual rAF loop: the dot sits exactly on the pointer and
@@ -579,7 +569,6 @@
     aria-label="Cinematic sequence: the name Sebastien resolves into a microscope, then pushes through the eyepiece onto a slide with five specimens, each linking to a section of the portfolio."></canvas>
   <div id="vignette" aria-hidden="true"></div>
   <div id="progress" aria-hidden="true"><span></span></div>
-  <div id="grain" aria-hidden="true"></div>
 
   <!-- Interactive overlay (fades in on the final frame) -->
   <div id="overlay" aria-hidden="true">
@@ -733,8 +722,6 @@
   var progressBar = progressEl ? progressEl.firstElementChild : null;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
-  var grainEl = document.getElementById('grain');
-  var GRAIN = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grain')) || 0.16;
   var overlay = document.getElementById('overlay');
   var field = document.getElementById('field');
   var ring = document.getElementById('ring');
@@ -752,6 +739,7 @@
   var maxReady = -1;                    // highest contiguously-loaded frame index
   var ready = false;
   var targetFrame = 0, renderFrame = 0, lastDrawn = -1, prevRender = 0;
+  var idleHiRes = true, idleT;                       // crisp when settled, low-res while scrolling
   var coverRect = { x:0, y:0, w:0, h:0 };
   var frameW = portraitTier ? 1000 : 1600;   // fallback until first img loads
   var frameH = portraitTier ? 1776 : 894;
@@ -837,7 +825,8 @@
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
     // capped at 1.25x: fewer device pixels to fill each frame -> smoother scrub
-    dpr = Math.min(window.devicePixelRatio || 1, 1) * 0.8;  // render canvas at 0.8x, CSS-upscaled — big fill-rate cut, invisible on a motion scrub
+    dpr = idleHiRes ? Math.min(window.devicePixelRatio || 1, 2)
+                    : Math.min(window.devicePixelRatio || 1, 1) * 0.8;  // crisp when idle, 0.8x while scrolling
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
@@ -845,7 +834,7 @@
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'low';
+    ctx.imageSmoothingQuality = idleHiRes ? 'high' : 'low';
   }
 
   function computeCover(){
@@ -1060,6 +1049,11 @@
       renderFrame += (targetFrame - renderFrame) * 0.16;
       if(Math.abs(targetFrame - renderFrame) < 0.05) renderFrame = targetFrame;
     }
+    // adaptive resolution: drop to fast 0.8x the instant we move, crisp when settled
+    if(Math.abs(renderFrame - prevRender) > 0.01){
+      if(idleHiRes){ idleHiRes = false; sizeCanvas(); computeCover(); lastDrawn = -1; }
+      clearTimeout(idleT); idleT = setTimeout(goHiRes, 220);
+    }
     // redraw only when the quantized blended position actually moves (6 steps/frame)
     var q = Math.round(renderFrame * 6);
     if(q !== lastDrawn){
@@ -1069,10 +1063,6 @@
     }
     prevRender = renderFrame;
     updateProgress(s);
-    if(grainEl){                                    // fade the film overlay out before the specimens
-      var gf = targetFrame <= 430 ? 1 : (targetFrame >= 495 ? 0 : 1 - (targetFrame - 430) / 65);
-      grainEl.style.opacity = (GRAIN * gf).toFixed(3);
-    }
     updateOverlay();
     if(markEl){
       var sm = renderFrame > 4;                      // show wordmark once past the title
@@ -1094,6 +1084,13 @@
   function wake(){
     if(lenis || !ready || cardOpen || looping) return;
     looping = true; requestAnimationFrame(rafLoop);
+  }
+  function goHiRes(){                                // re-render the settled frame at full res (crisp title/stills)
+    if(!ready || cardOpen || idleHiRes) return;
+    idleHiRes = true;
+    sizeCanvas(); computeCover();
+    drawBlended(renderFrame, true);
+    lastDrawn = Math.round(renderFrame * 6);
   }
   function updateProgress(s){                       // glass scroll rail: 0..1 through the journey
     if(!progressBar) return;
