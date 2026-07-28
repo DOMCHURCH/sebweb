@@ -331,7 +331,9 @@
     background:
       radial-gradient(130% 85% at 14% -12%, rgba(255,250,240,.6), transparent 46%),
       linear-gradient(155deg, rgba(246,238,222,.7), rgba(234,222,200,.48));
-    -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
+    /* blur trimmed 22->12px: same frosted look, far cheaper to composite over the
+       full-screen canvas — this is what made opening a card feel laggy on real GPUs */
+    -webkit-backdrop-filter:blur(12px) saturate(128%); backdrop-filter:blur(12px) saturate(128%);
   }
   /* opaque fallback where backdrop-filter is unsupported */
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -441,7 +443,7 @@
     background:
       radial-gradient(120% 80% at 15% -10%, rgba(245,237,221,.1), transparent 50%),
       linear-gradient(160deg, rgba(245,237,221,.06), rgba(203,161,53,.03));
-    -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
+    -webkit-backdrop-filter:blur(14px) saturate(135%); backdrop-filter:blur(14px) saturate(135%);
     border:1px solid rgba(203,161,53,.24); border-radius:20px;
     box-shadow:
       0 30px 80px -20px rgba(0,0,0,.6),
@@ -455,7 +457,7 @@
   .field{ margin-bottom:18px; }
   .field label{ display:block; font-weight:500; letter-spacing:.2em; text-transform:uppercase; font-size:.56rem; color:var(--ink-dim); margin-bottom:9px; }
   .field input, .field textarea{
-    width:100%; font-family:inherit; font-size:15px; font-weight:300; color:#fff;
+    width:100%; font-family:inherit; font-size:16px; font-weight:300; color:#fff;   /* >=16px so iOS Safari doesn't auto-zoom on focus */
     background:rgba(255,255,255,.04); border:1px solid rgba(203,161,53,.16);
     border-radius:12px; padding:13px 16px; outline:none; resize:vertical;
     transition:border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease);
@@ -772,7 +774,7 @@
   var coverRect = { x:0, y:0, w:0, h:0 };
   var frameW = portraitTier ? 1000 : 1600;   // fallback until first img loads
   var frameH = portraitTier ? 1776 : 894;
-  var dpr = Math.min(window.devicePixelRatio || 1, 1) * 0.8;  // render canvas at 0.8x, CSS-upscaled — big fill-rate cut, invisible on a motion scrub
+  var dpr = Math.min(window.devicePixelRatio || 1, 1.3);  // motion renders ~1:1 (source frames are 1600px) so the scrub stays crisp, not soft
   var overlayActive = false;
   var cardOpen = false;
   var curCard = 0;
@@ -856,9 +858,11 @@
 
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
-    // capped at 1.25x: fewer device pixels to fill each frame -> smoother scrub
+    // Source frames are only ~1600px wide, so rendering past that buys no sharpness.
+    // Motion now renders ~1:1 with CSS pixels (crisp — was 0.8x and visibly soft);
+    // idle bumps to 2x for stills. High smoothing is cheap at this near-1:1 scale.
     dpr = idleHiRes ? Math.min(window.devicePixelRatio || 1, 2)
-                    : Math.min(window.devicePixelRatio || 1, 1) * 0.8;  // crisp when idle, 0.8x while scrolling
+                    : Math.min(window.devicePixelRatio || 1, 1.3);
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
@@ -866,7 +870,7 @@
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = idleHiRes ? 'high' : 'low';
+    ctx.imageSmoothingQuality = 'high';
   }
 
   function computeCover(){
