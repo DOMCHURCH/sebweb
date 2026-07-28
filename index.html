@@ -168,8 +168,10 @@
   #hint .rail::after{
     content:""; position:absolute; left:0; top:-40%; width:100%; height:40%;
     background:linear-gradient(180deg, transparent, var(--neon-bright));
-    animation:railrun 1.9s var(--ease) infinite;
   }
+  /* animate ONLY while the intro hint is shown — otherwise this infinite animation
+     keeps the compositor awake every frame for the whole session (hidden at opacity 0). */
+  #hint.show .rail::after{ animation:railrun 1.9s var(--ease) infinite; }
   @keyframes railrun{ 0%{transform:translateY(-100%)} 60%,100%{transform:translateY(360%)} }
 
   /* ================= INTERACTIVE OVERLAY ============================ */
@@ -198,8 +200,9 @@
   .arrow-ring{ fill:none; stroke:var(--neon); stroke-width:1.25; opacity:.82;
     transition:stroke .25s var(--ease), opacity .25s var(--ease), stroke-width .25s var(--ease); }
   .arrow-dot{ fill:var(--neon-bright); opacity:.9; }
-  .arrow{ filter:drop-shadow(0 0 3px var(--neon-glow)); transition:filter .25s var(--ease); }
-  .arrow.hot{ filter:drop-shadow(0 0 8px var(--neon)); }
+  /* static, un-transitioned glow: hovering intensifies via stroke colour/width below,
+     NOT by re-rasterizing a drop-shadow filter on every hover frame. */
+  .arrow{ filter:drop-shadow(0 0 2px var(--neon-glow)); }
   .arrow.hot .arrow-line{ stroke:var(--neon-bright); opacity:.85; }
   .arrow.hot .arrow-ring{ stroke:var(--neon-bright); opacity:1; stroke-width:1.75; }
 
@@ -242,10 +245,11 @@
     bottom:calc(4.6vh + env(safe-area-inset-bottom)); z-index:6;
     display:flex; gap:6px; padding:7px;
     border-radius:999px;
-    background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(120,224,214,.04));
-    -webkit-backdrop-filter:blur(18px) saturate(150%); backdrop-filter:blur(18px) saturate(150%);
-    border:1px solid rgba(120,224,214,.22);
-    box-shadow:0 18px 50px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.14);
+    /* solid tinted glass, NOT backdrop-filter: over the dark specimen field this reads
+       the same, but doesn't re-blur the canvas every time the cursor moves (hover lag). */
+    background:linear-gradient(160deg, rgba(20,34,40,.82), rgba(10,22,26,.74));
+    border:1px solid rgba(120,224,214,.26);
+    box-shadow:0 14px 34px -16px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1);
     opacity:0; transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
     pointer-events:none;
   }
@@ -276,10 +280,9 @@
     display:flex; align-items:center; justify-content:center;
     font-family:var(--font-display); font-weight:600; font-size:.92rem; letter-spacing:.01em;
     color:var(--ink); text-decoration:none;
-    background:linear-gradient(160deg, rgba(255,255,255,.12), rgba(120,224,214,.05));
-    -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
-    border:1px solid rgba(120,224,214,.28);
-    box-shadow:0 12px 30px -12px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18);
+    background:linear-gradient(160deg, rgba(20,34,40,.86), rgba(10,22,26,.78));   /* solid, not backdrop-filter */
+    border:1px solid rgba(120,224,214,.3);
+    box-shadow:0 10px 22px -12px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14);
     opacity:0; transform:translateY(-10px) scale(.92); pointer-events:none;
     transition:opacity .5s var(--ease), transform .5s var(--ease), background .25s var(--ease), border-color .25s var(--ease);
   }
@@ -304,16 +307,14 @@
     max-height:min(86vh, 860px);
     display:flex; flex-direction:column; overflow:hidden;
     background:
-      radial-gradient(130% 85% at 14% -12%, rgba(255,250,240,.7), transparent 46%),
-      linear-gradient(155deg, rgba(246,238,222,.82), rgba(234,222,200,.68));
+      radial-gradient(130% 85% at 14% -12%, rgba(255,251,242,.9), transparent 48%),
+      linear-gradient(155deg, rgba(248,242,230,.988), rgba(236,226,206,.976));
     border:1px solid rgba(214,196,158,.6);
     border-radius:22px;
-    will-change:opacity, transform;
     box-shadow:
-      0 40px 90px -22px rgba(4,8,25,.62),
-      0 8px 26px -14px rgba(4,8,25,.5),
-      inset 0 1px 0 rgba(255,255,255,.95),
-      inset 0 -1px 0 rgba(150,100,45,.18);
+      0 24px 50px -20px rgba(4,8,25,.55),
+      inset 0 1px 0 rgba(255,255,255,.9),
+      inset 0 -1px 0 rgba(150,100,45,.16);
     color:var(--card-ink);
     opacity:0; visibility:hidden;
   }
@@ -323,18 +324,11 @@
     padding:28px clamp(22px,4vw,36px) 54px;
   }
   #card.show{ opacity:1; visibility:visible; }
-  /* Frost is applied ONLY once the card is settled & static (via .glass, added on
-     animation complete). Animating a backdrop-filter re-blurs the whole area every
-     frame and tanks perf — this keeps open/close/swap on the cheap path, then the
-     blur composites once over a static backdrop. */
-  #card.glass{
-    background:
-      radial-gradient(130% 85% at 14% -12%, rgba(255,250,240,.6), transparent 46%),
-      linear-gradient(155deg, rgba(246,238,222,.7), rgba(234,222,200,.48));
-    /* blur trimmed 22->12px: same frosted look, far cheaper to composite over the
-       full-screen canvas — this is what made opening a card feel laggy on real GPUs */
-    -webkit-backdrop-filter:blur(12px) saturate(128%); backdrop-filter:blur(12px) saturate(128%);
-  }
+  /* NO backdrop-filter. A live blur over the full-screen canvas is the single biggest
+     cause of card-open lag on weak / no-hardware-acceleration GPUs (re-blurs every
+     composite). The card is now a near-opaque cream panel — same warm look, zero
+     per-frame blur cost. .glass is kept as a no-op so the open/swap JS needs no change. */
+  #card.glass{ }
   /* opaque fallback where backdrop-filter is unsupported */
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
     #card{ background:rgba(247,240,226,.98); }
@@ -441,9 +435,8 @@
   #contact-form{
     text-align:left;
     background:
-      radial-gradient(120% 80% at 15% -10%, rgba(245,237,221,.1), transparent 50%),
-      linear-gradient(160deg, rgba(245,237,221,.06), rgba(203,161,53,.03));
-    -webkit-backdrop-filter:blur(14px) saturate(135%); backdrop-filter:blur(14px) saturate(135%);
+      radial-gradient(120% 80% at 15% -10%, rgba(245,237,221,.07), transparent 50%),
+      linear-gradient(160deg, rgba(24,40,31,.9), rgba(18,31,24,.86));   /* solid warm-dark, not backdrop-filter */
     border:1px solid rgba(203,161,53,.24); border-radius:20px;
     box-shadow:
       0 30px 80px -20px rgba(0,0,0,.6),
@@ -876,7 +869,7 @@
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = idleHiRes ? 'high' : 'medium';   // crisp stills, lighter per-frame cost while scrolling
   }
 
   function computeCover(){
