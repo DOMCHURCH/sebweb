@@ -17,6 +17,8 @@
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="Sebastien Church — Neuroscience &amp; Mental Health" />
 <meta name="twitter:image" content="og.jpg" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="apple-touch-icon" href="favicon.svg" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -123,6 +125,19 @@
     background:linear-gradient(90deg, var(--neon), var(--neon-bright));
     box-shadow:0 0 12px var(--neon-glow);
   }
+
+  /* ================= LOADING SCREEN ================================= */
+  #loader{
+    position:fixed; inset:0; z-index:200; background:#05070f;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.3rem;
+    transition:opacity .8s var(--ease), visibility .8s;
+  }
+  #loader.done{ opacity:0; visibility:hidden; }
+  .l-mark{ font-family:var(--font-display); font-weight:500; letter-spacing:.05em; font-size:clamp(1.7rem,4vw,2.6rem); color:#fff; }
+  .l-sub{ font-family:var(--font-sans); font-weight:300; letter-spacing:.42em; text-transform:uppercase; font-size:.58rem; color:var(--ink-faint); margin-top:-.7rem; }
+  .l-track{ width:min(220px,54vw); height:2px; margin-top:.5rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .l-bar{ height:100%; width:0; background:linear-gradient(90deg,var(--neon),var(--neon-bright)); box-shadow:0 0 10px var(--neon-glow); transition:width .3s var(--ease); }
+  @media (prefers-reduced-motion:reduce){ #loader{ transition-duration:1ms; } .l-bar{ transition:none; } }
 
   /* ================= SCROLL HINT (intro) ============================ */
   #hint{
@@ -506,6 +521,12 @@
 </head>
 <body class="is-loading">
 
+  <div id="loader">
+    <div class="l-mark">Sebastien</div>
+    <div class="l-sub">Neuroscience &amp; Mental Health</div>
+    <div class="l-track"><div class="l-bar" id="l-bar"></div></div>
+  </div>
+
   <a href="#" id="skip" class="skip">Skip to portfolio</a>
   <div id="cursor" aria-hidden="true"></div>
   <a id="mark" href="#top" aria-label="Back to top">SC</a>
@@ -651,7 +672,7 @@
       ],
       tags:['Stereo Investigator','c-Fos quantification','Immunohistochemistry','EEG','DNA / PCR','RStudio'] },
 
-    { key:'field', kicker:'02 — Specimen', title:'Field Experience', img:'',
+    { key:'field', kicker:'02 — Specimen', title:'Field Experience', img:'img/cusert.jpg',
       entries:[
         {role:'Reserve Combat Medic in Training', org:'Canadian Armed Forces', date:'Apr 2026 — Present',
          desc:'Training to deliver initial care and lifesaving interventions to trauma casualties in the field and in clinics, alongside Medical Officers, Physician Assistants, Nursing Officers and Paramedics.'},
@@ -698,6 +719,8 @@
   var spacer = document.getElementById('spacer');
   var progressEl = document.getElementById('progress');
   var progressBar = progressEl ? progressEl.firstElementChild : null;
+  var loaderEl = document.getElementById('loader');
+  var lBar = document.getElementById('l-bar');
   var overlay = document.getElementById('overlay');
   var field = document.getElementById('field');
   var ring = document.getElementById('ring');
@@ -741,7 +764,7 @@
   /* ================= PRELOAD ======================================= */
   function preload(){
     var CONC = 12, next = 0, done = 0, active = 0;
-    var REVEAL = 12;                          // buffer this many frames, then reveal
+    var REVEAL = 24;                          // buffer this many frames, then reveal
     function advanceReady(){
       while(maxReady + 1 < TOTAL){
         var nx = images[maxReady + 1];
@@ -752,7 +775,7 @@
       if(!ready && (maxReady + 1 >= REVEAL || done >= TOTAL)) reveal();
       else if(ready) wake();     // newly-loaded frames may let a clamped scrub catch up
     }
-    function bump(){ loaded++; }
+    function bump(){ loaded++; if(lBar){ lBar.style.width = Math.min(100, Math.round(loaded / REVEAL * 100)) + '%'; } }
     function one(i){
       var img = new Image();
       img.decoding = 'async';
@@ -775,7 +798,8 @@
     if(ready) return;                          // reveal once, as soon as the buffer is ready
     ready = true;
     body.classList.remove('is-loading');
-    canvas.classList.add('ready');              // fade the first frame up from black (no splash)
+    if(loaderEl) loaderEl.classList.add('done');
+    canvas.classList.add('ready');              // fade the first frame up from black
     layout();
     draw(firstDrawable());                      // never reveal a black canvas on a dead frame 0
     // restore scroll position after an orientation-flip reload
