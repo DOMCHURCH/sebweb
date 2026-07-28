@@ -92,20 +92,20 @@
   }
   #scene.ready ~ #vignette{ opacity:1; }
 
-  /* ================= CUSTOM CURSOR (fine pointer only) ============= */
+  /* ================= CUSTOM CURSOR — minimal dot (fine pointer only) ===
+     No lerp, no perpetual rAF loop: the dot sits exactly on the pointer and
+     only transitions colour/ring (composited), never size/layout. */
   #cursor{
     position:fixed; top:0; left:0; z-index:400; pointer-events:none;
-    width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%;
-    border:1.5px solid rgba(150,180,255,.8);
-    box-shadow:0 0 14px rgba(26,79,214,.55);
+    width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%;
+    background:rgba(210,222,255,.92);
     opacity:0;
-    transition:width .3s var(--ease), height .3s var(--ease), margin .3s var(--ease),
-               background .3s var(--ease), border-color .3s var(--ease), opacity .35s var(--ease);
+    transition:opacity .3s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease);
     will-change:transform;
   }
   #cursor.on{ opacity:1; }
-  #cursor.big{ width:64px; height:64px; margin:-32px 0 0 -32px;
-    background:rgba(120,160,255,.12); border-color:rgba(185,208,255,.95); }
+  /* hover on interactives: a soft ring via box-shadow — cheap, no resize/reflow */
+  #cursor.big{ background:var(--neon-bright); box-shadow:0 0 0 7px rgba(140,175,255,.16); }
   html.has-cursor, html.has-cursor *{ cursor:none; }
   html.has-cursor input, html.has-cursor textarea, html.has-cursor select{ cursor:auto; }
   @media (hover:none),(pointer:coarse){ #cursor{ display:none!important; } }
@@ -708,11 +708,11 @@
   var loaded = 0;
   var maxReady = -1;                    // highest contiguously-loaded frame index
   var ready = false;
-  var targetFrame = 0, renderFrame = 0, lastDrawn = -1;
+  var targetFrame = 0, renderFrame = 0, lastDrawn = -1, prevRender = 0;
   var coverRect = { x:0, y:0, w:0, h:0 };
   var frameW = portraitTier ? 1000 : 1600;   // fallback until first img loads
   var frameH = portraitTier ? 1776 : 894;
-  var dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+  var dpr = Math.min(window.devicePixelRatio || 1, 1);
   var overlayActive = false;
   var cardOpen = false;
   var curCard = 0;
@@ -791,7 +791,7 @@
   /* ================= CANVAS SIZING + DRAW ========================= */
   function sizeCanvas(){
     // capped at 1.25x: fewer device pixels to fill each frame -> smoother scrub
-    dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    dpr = Math.min(window.devicePixelRatio || 1, 1);
     var vw = viewW(), vh = viewH();
     canvas.width = Math.round(vw * dpr);
     canvas.height = Math.round(vh * dpr);
@@ -832,7 +832,7 @@
   }
   // Cross-fade adjacent frames by the fractional scroll position, so a 510-frame
   // sequence reads as continuous motion instead of stepping frame-to-frame.
-  function drawBlended(pos){
+  function drawBlended(pos, blend){
     var f0 = Math.floor(pos), frac = pos - f0, f1 = f0 + 1;
     if(f0 > maxReady) f0 = maxReady;
     if(f1 > maxReady) f1 = maxReady;
@@ -841,7 +841,9 @@
     var vw = viewW(), vh = viewH();
     ctx.clearRect(0,0,vw,vh);
     paint(f0, 1);
-    if(f1 !== f0 && frac > 0.02) paint(f1, frac);
+    // second draw (cross-fade) only when scrolling slowly — fast motion hides the
+    // frame steps, so we skip the extra fill and keep the scrub cheap.
+    if(blend && f1 !== f0 && frac > 0.02) paint(f1, frac);
   }
 
   /* ================= LAYOUT (cover rect -> overlay field) ========= */
@@ -1014,7 +1016,12 @@
     }
     // redraw only when the quantized blended position actually moves (6 steps/frame)
     var q = Math.round(renderFrame * 6);
-    if(q !== lastDrawn){ lastDrawn = q; drawBlended(renderFrame); }
+    if(q !== lastDrawn){
+      lastDrawn = q;
+      var fast = Math.abs(renderFrame - prevRender) > 1.5;   // whip-scroll -> skip the blend
+      drawBlended(renderFrame, !fast);
+    }
+    prevRender = renderFrame;
     updateProgress(s);
     updateOverlay();
     if(markEl){
@@ -1271,21 +1278,25 @@
     });
   }
 
-  // custom circle cursor on fine-pointer (desktop) devices
+  // Minimal dot cursor (fine-pointer only). Best-practice pattern: capture the
+  // pointer in pointermove, flush to the DOM once per frame via rAF that is only
+  // scheduled when there's a pending move — so it idles at zero cost (no
+  // perpetual loop competing with the scroll ticker).
   (function initCursor(){
     if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
     var cur = document.getElementById('cursor');
     if(!cur) return;
     document.documentElement.classList.add('has-cursor');
-    var cx=0, cy=0, tx=0, ty=0, on=false;
+    var x=0, y=0, on=false, queued=false;
+    function flush(){ queued=false; cur.style.transform='translate3d('+x+'px,'+y+'px,0)'; }
     window.addEventListener('pointermove', function(e){
-      tx=e.clientX; ty=e.clientY;
-      if(!on){ on=true; cx=tx; cy=ty; cur.classList.add('on'); }
+      x=e.clientX; y=e.clientY;
+      if(!on){ on=true; cur.classList.add('on'); }
+      if(!queued){ queued=true; requestAnimationFrame(flush); }
     }, {passive:true});
-    var SEL = '.zone, a, button, input, textarea, select, [data-cursor]';
+    var SEL = '.zone, .leg-chip, a, button, input, textarea, select, [data-cursor]';
     document.addEventListener('mouseover', function(e){ if(e.target.closest && e.target.closest(SEL)) cur.classList.add('big'); }, {passive:true});
     document.addEventListener('mouseout',  function(e){ if(e.target.closest && e.target.closest(SEL)) cur.classList.remove('big'); }, {passive:true});
-    (function loop(){ cx+=(tx-cx)*0.22; cy+=(ty-cy)*0.22; cur.style.transform='translate('+cx+'px,'+cy+'px)'; requestAnimationFrame(loop); })();
   })();
 
   // contact form (Web3Forms) + reveal on scroll
