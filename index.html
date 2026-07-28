@@ -105,48 +105,18 @@
   html.has-cursor input, html.has-cursor textarea, html.has-cursor select{ cursor:auto; }
   @media (hover:none),(pointer:coarse){ #cursor{ display:none!important; } }
 
-  /* ================= LOADING SCREEN ================================= */
-  #loader{
-    position:fixed; inset:0; z-index:200;
-    background:#000; color:var(--ink);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2.4rem;
-    transition:opacity 700ms var(--ease), visibility 700ms;
+  /* ================= SCROLL PROGRESS (glass depth rail) ============= */
+  #progress{
+    position:fixed; top:0; left:0; right:0; height:2px; z-index:8;
+    background:rgba(255,255,255,.05); pointer-events:none;
+    opacity:0; transition:opacity 900ms var(--ease);
   }
-  #loader.done{ opacity:0; visibility:hidden; }
-  .loader-mark{
-    font-family:var(--font-display);
-    font-weight:500;
-    letter-spacing:.06em;
-    font-size:clamp(1.5rem, 4vw, 2.6rem);
-    color:var(--ink);
-    opacity:.92;
-  }
-  .loader-sub{
-    font-family:var(--font-sans);
-    font-weight:300;
-    letter-spacing:.42em;
-    text-transform:uppercase;
-    font-size:.62rem;
-    color:var(--ink-faint);
-    margin-top:-1.6rem;
-  }
-  .loader-pct{
-    position:absolute; bottom:calc(2.4rem + 22px + env(safe-area-inset-bottom));
-    font-family:var(--font-sans); font-weight:200;
-    font-size:.8rem; letter-spacing:.3em; color:var(--ink-dim);
-    font-variant-numeric:tabular-nums;
-  }
-  .loader-track{
-    position:absolute; left:0; bottom:0; width:100%; height:2px;
-    background:rgba(255,255,255,.06);
-    overflow:hidden;
-  }
-  .loader-bar{
-    height:100%; width:0%;
+  #scene.ready ~ #progress{ opacity:1; }
+  #progress > span{
+    display:block; height:100%; width:100%;
+    transform:scaleX(0); transform-origin:0 50%;
     background:linear-gradient(90deg, var(--neon), var(--neon-bright));
-    box-shadow:0 0 12px var(--neon), 0 0 4px var(--neon-bright);
-    transition:width 260ms var(--ease);
+    box-shadow:0 0 12px var(--neon-glow);
   }
 
   /* ================= SCROLL HINT (intro) ============================ */
@@ -251,10 +221,10 @@
   /* ================= CARD (frosty-white glass modal) ============== */
   #scrim{
     position:fixed; inset:0; z-index:99;
-    background:rgba(4,8,22,.62);
+    background:radial-gradient(120% 120% at 50% 50%, rgba(6,10,28,.5), rgba(2,4,14,.74));
     opacity:0; visibility:hidden;
     transition:opacity var(--dur) var(--ease), visibility var(--dur);
-    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(6px) saturate(115%); backdrop-filter:blur(6px) saturate(115%);
   }
   #scrim.show{ opacity:1; visibility:visible; }
 
@@ -265,12 +235,18 @@
     width:min(680px, calc(100vw - 32px));
     max-height:min(86vh, 860px);
     overflow-y:auto; overscroll-behavior:contain;
-    background:linear-gradient(160deg, rgba(255,255,255,.82), rgba(235,242,255,.66));
-    -webkit-backdrop-filter:blur(14px) saturate(120%); backdrop-filter:blur(14px) saturate(120%);
-    border:1px solid var(--card-border);
-    border-radius:18px;
+    background:
+      radial-gradient(130% 85% at 14% -12%, rgba(255,255,255,.55), transparent 46%),
+      linear-gradient(155deg, rgba(255,255,255,.60), rgba(224,235,255,.38));
+    -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:22px;
     will-change:opacity, transform;
-    box-shadow:var(--card-shadow), inset 0 1px 0 rgba(255,255,255,.9);
+    box-shadow:
+      0 40px 90px -22px rgba(4,8,25,.62),
+      0 8px 26px -14px rgba(4,8,25,.5),
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 -1px 0 rgba(120,150,220,.16);
     color:var(--card-ink);
     padding:28px clamp(22px,4vw,36px) 54px;
     opacity:0; visibility:hidden;
@@ -371,10 +347,15 @@
 
   #contact-form{
     text-align:left;
-    background:rgba(255,255,255,.055);
-    -webkit-backdrop-filter:blur(12px) saturate(120%); backdrop-filter:blur(12px) saturate(120%);
-    border:1px solid rgba(150,180,255,.18); border-radius:18px;
-    box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+    background:
+      radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,.09), transparent 50%),
+      linear-gradient(160deg, rgba(255,255,255,.07), rgba(150,180,255,.03));
+    -webkit-backdrop-filter:blur(22px) saturate(150%); backdrop-filter:blur(22px) saturate(150%);
+    border:1px solid rgba(150,180,255,.24); border-radius:20px;
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 0 44px rgba(26,79,214,.06);
     padding:clamp(20px,4vw,32px);
   }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -455,8 +436,8 @@
 
   /* ================= REDUCED MOTION ================================ */
   @media (prefers-reduced-motion:reduce){
-    #scene, #vignette, #loader, #hint, #overlay, #scrim, #card,
-    .arrow, .arrow-line, .arrow-head, .label, .label .u, .loader-bar{
+    #scene, #vignette, #hint, #overlay, #scrim, #card, #progress > span,
+    .arrow, .arrow-line, .arrow-head, .label, .label .u{
       transition-duration:1ms !important;
     }
     #hint .rail::after{ animation:none; }
@@ -507,6 +488,7 @@
   <canvas id="scene" role="img"
     aria-label="Cinematic sequence: the name Sebastien resolves into a microscope, then pushes through the eyepiece onto a slide with five specimens, each linking to a section of the portfolio."></canvas>
   <div id="vignette" aria-hidden="true"></div>
+  <div id="progress" aria-hidden="true"><span></span></div>
 
   <!-- Interactive overlay (fades in on the final frame) -->
   <div id="overlay" aria-hidden="true">
@@ -536,14 +518,6 @@
     <button id="card-next" class="icon-btn" aria-label="Next section">&rsaquo;</button>
   </div>
 
-  <!-- Loading screen -->
-  <div id="loader">
-    <div class="loader-mark">Sebastien</div>
-    <div class="loader-sub">Neuroscience &amp; Mental Health</div>
-    <div class="loader-pct" id="loader-pct">0%</div>
-    <div class="loader-track"><div class="loader-bar" id="loader-bar"></div></div>
-  </div>
-
   <!-- Accessible, always-present text version of the content (SR + SEO) -->
   <main class="sr-only" id="a11y-content">
     <h1>Sebastien Church — Neuroscience &amp; Mental Health</h1>
@@ -571,8 +545,8 @@
   var N1 = 210, N2 = 300;              // video1 = frames 0..209, video2 = 210..509
   var TOTAL = N1 + N2;                 // 510
   var LAST = TOTAL - 1;               // 509
-  var PPF = 8;                         // pixels of scroll per frame
-  var SEQ = TOTAL * PPF;              // 4080  (scroll range that scrubs frames)
+  var PPF = 9;                         // pixels of scroll per frame (cross-faded between frames)
+  var SEQ = TOTAL * PPF;              // scroll range that scrubs the frame sequence
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Portrait / narrow viewports load the 9:16 clips; wider ones get the 16:9 set.
@@ -663,9 +637,8 @@
   var canvas = document.getElementById('scene');
   var ctx = canvas.getContext('2d');
   var spacer = document.getElementById('spacer');
-  var loader = document.getElementById('loader');
-  var loaderBar = document.getElementById('loader-bar');
-  var loaderPct = document.getElementById('loader-pct');
+  var progressEl = document.getElementById('progress');
+  var progressBar = progressEl ? progressEl.firstElementChild : null;
   var overlay = document.getElementById('overlay');
   var field = document.getElementById('field');
   var ring = document.getElementById('ring');
@@ -701,6 +674,7 @@
   function viewW(){ return (window.visualViewport && window.visualViewport.width)  || window.innerWidth; }
   function viewH(){ return (window.visualViewport && window.visualViewport.height) || window.innerHeight; }
   function startHold(){ return Math.round(viewH() * 0.6); }  // title lingers ~0.6 screens before scrubbing
+  function endHold(){ return Math.round(viewH() * 1.5); }    // dwell on the final specimen slide so it reads
 
   /* ================= PRELOAD ======================================= */
   function preload(){
@@ -716,13 +690,7 @@
       if(!ready && (maxReady + 1 >= REVEAL || done >= TOTAL)) reveal();
       else if(ready) wake();     // newly-loaded frames may let a clamped scrub catch up
     }
-    function bump(){
-      loaded++;
-      // the splash bar fills toward the reveal buffer (not all 510) so it feels fast
-      var pct = Math.min(100, Math.round(loaded / REVEAL * 100));
-      loaderBar.style.width = pct + '%';
-      loaderPct.textContent = pct + '%';
-    }
+    function bump(){ loaded++; }
     function one(i){
       var img = new Image();
       img.decoding = 'async';
@@ -745,8 +713,7 @@
     if(ready) return;                          // reveal once, as soon as the buffer is ready
     ready = true;
     body.classList.remove('is-loading');
-    loader.classList.add('done');
-    canvas.classList.add('ready');
+    canvas.classList.add('ready');              // fade the first frame up from black (no splash)
     layout();
     draw(firstDrawable());                      // never reveal a black canvas on a dead frame 0
     // restore scroll position after an orientation-flip reload
@@ -789,16 +756,36 @@
     coverRect.h = h;
   }
 
-  function draw(i){
+  function paint(i, alpha){                       // draw one frame over whatever's already there
     var img = images[i];
-    if(!img || !img.complete || !img.naturalWidth) return;
-    // keep frame dims in sync with the real asset (first successful draw)
-    if(img.naturalWidth && img.naturalWidth !== frameW){
+    if(!img || !img.complete || !img.naturalWidth) return false;
+    if(img.naturalWidth !== frameW){              // keep the cover rect synced to the real asset
       frameW = img.naturalWidth; frameH = img.naturalHeight; computeCover();
     }
+    if(alpha !== 1) ctx.globalAlpha = alpha;
+    ctx.drawImage(img, coverRect.x, coverRect.y, coverRect.w, coverRect.h);
+    if(alpha !== 1) ctx.globalAlpha = 1;
+    return true;
+  }
+  function drawable(i){ var im = images[i]; return im && im.complete && im.naturalWidth; }
+  function draw(i){                               // single opaque frame (used at reveal)
+    if(!drawable(i)) return;                       // nothing valid -> keep the current canvas
     var vw = viewW(), vh = viewH();
     ctx.clearRect(0,0,vw,vh);
-    ctx.drawImage(img, coverRect.x, coverRect.y, coverRect.w, coverRect.h);
+    paint(i, 1);
+  }
+  // Cross-fade adjacent frames by the fractional scroll position, so a 510-frame
+  // sequence reads as continuous motion instead of stepping frame-to-frame.
+  function drawBlended(pos){
+    var f0 = Math.floor(pos), frac = pos - f0, f1 = f0 + 1;
+    if(f0 > maxReady) f0 = maxReady;
+    if(f1 > maxReady) f1 = maxReady;
+    if(f1 > LAST) f1 = LAST;
+    if(f0 < 0 || !drawable(f0)) return;            // base frame missing -> hold, don't flash black
+    var vw = viewW(), vh = viewH();
+    ctx.clearRect(0,0,vw,vh);
+    paint(f0, 1);
+    if(f1 !== f0 && frac > 0.02) paint(f1, frac);
   }
 
   /* ================= LAYOUT (cover rect -> overlay field) ========= */
@@ -926,17 +913,18 @@
     if(cardOpen) return;                            // frame is frozen behind the card — skip work
     var s = scrollTop();
     var HOLD = startHold();                         // hold on the title before scrubbing begins
-    var f = s <= HOLD ? 0 : Math.floor((s - HOLD) / PPF);
-    targetFrame = clamp(f, 0, LAST);
+    var fpos = s <= HOLD ? 0 : (s - HOLD) / PPF;    // FLOAT frame position -> enables cross-fade
+    targetFrame = clamp(fpos, 0, LAST);
     if(lenis || reduceMotion){
       renderFrame = targetFrame;                    // Lenis already smooths the scroll input
     } else {
       renderFrame += (targetFrame - renderFrame) * 0.16;
-      if(Math.abs(targetFrame - renderFrame) < 0.4) renderFrame = targetFrame;
+      if(Math.abs(targetFrame - renderFrame) < 0.05) renderFrame = targetFrame;
     }
-    var idx = Math.round(renderFrame);
-    if(idx > maxReady) idx = maxReady;              // never draw past what's loaded (progressive)
-    if(idx >= 0 && idx !== lastDrawn){ draw(idx); lastDrawn = idx; }
+    // redraw only when the quantized blended position actually moves (6 steps/frame)
+    var q = Math.round(renderFrame * 6);
+    if(q !== lastDrawn){ lastDrawn = q; drawBlended(renderFrame); }
+    updateProgress(s);
     updateOverlay();
   }
   // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
@@ -945,7 +933,7 @@
   var looping = false;
   function rafLoop(){
     renderTick();
-    if(ready && !cardOpen && Math.abs(targetFrame - renderFrame) >= 0.4){
+    if(ready && !cardOpen && Math.abs(targetFrame - renderFrame) >= 0.05){
       requestAnimationFrame(rafLoop);              // still catching up — keep going
     } else {
       looping = false;                             // settled -> sleep until woken
@@ -955,10 +943,15 @@
     if(lenis || !ready || cardOpen || looping) return;
     looping = true; requestAnimationFrame(rafLoop);
   }
+  function updateProgress(s){                       // glass scroll rail: 0..1 through the journey
+    if(!progressBar) return;
+    var p = clamp(s / (startHold() + SEQ + endHold()), 0, 1);
+    progressBar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+  }
 
   function updateOverlay(){
     var active = (targetFrame >= LAST) && (maxReady >= LAST) && !cardOpen
-                 && (scrollTop() < startHold() + SEQ + viewH() * 1.3);   // hand off to the contact section
+                 && (scrollTop() < startHold() + SEQ + endHold());   // hand off to the contact section
     if(active !== overlayActive){
       overlayActive = active;
       overlay.classList.toggle('active', active);
@@ -979,7 +972,8 @@
     document.getElementById('card-count').textContent = (i+1) + ' / ' + CARDS.length;
 
     var media = document.getElementById('card-media');
-    media.innerHTML = c.img ? '<img src="'+c.img+'" alt="'+c.title.replace('&amp;','and')+'">' : '<span>[ IMAGE ]</span>';
+    if(c.img){ media.style.display = ''; media.innerHTML = '<img src="'+c.img+'" alt="'+c.title.replace('&amp;','and')+'">'; }
+    else { media.style.display = 'none'; media.innerHTML = ''; }   // no photo yet -> no empty box
 
     var b = document.getElementById('card-body');
     var html = '';
@@ -1228,7 +1222,7 @@
   })();
 
   function setSpacer(){
-    spacer.style.height = (startHold() + SEQ + viewH() * 2) + 'px';
+    spacer.style.height = (startHold() + SEQ + endHold() + viewH()) + 'px';
   }
 
   /* ================= BOOT ========================================= */
