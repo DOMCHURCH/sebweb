@@ -48,6 +48,14 @@
     --card-accent:   #a75d2b;
     --card-accent-2: #8c2f1d;
 
+    /* Loading-screen palette — the warm copper/gold thread that also runs
+       through the contact section. Teal (--neon) stays reserved for the
+       microscope layer: reticles, leaders, specimen labels. */
+    --copper:      #b1622e;
+    --gold:        #cba135;
+    --cream:       #f7efe0;
+    --loader-bg:   #14231b;
+
     --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --font-sans:    'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -144,17 +152,18 @@
   .p-track{
     position:absolute; left:50%; top:0; margin-left:-4px;
     width:8px; height:100%; border-radius:999px; overflow:hidden;
-    /* dark core + light rim so the rail holds up over both the black title
+    /* dark core + warm rim so the rail holds up over both the black title
        card and the bright microscope frames it passes over */
-    background:rgba(4,10,14,.5);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+    background:rgba(20,35,27,.55);
+    box-shadow:inset 0 0 0 1px rgba(203,161,53,.3);
   }
-  /* travelled portion, grown from the top — no shadow, it would smear under
-     the scaleY; the reticle below carries the glow instead. */
+  /* travelled portion, grown from the top — the loader's copper->gold bar,
+     stood on end. No shadow: it would smear under the scaleY, so the reticle
+     below carries the glow instead. */
   .p-fill{
     display:block; width:100%; height:100%;
     transform:scaleY(0); transform-origin:50% 0;
-    background:linear-gradient(180deg, var(--neon), var(--neon-bright));
+    background:linear-gradient(180deg, var(--copper), var(--gold));
   }
   .p-knob{
     position:absolute; left:50%; top:0;
@@ -166,22 +175,22 @@
      stays legible over the bright eyepiece frames. */
   .p-knob::before{
     content:""; position:absolute; inset:3px; border-radius:50%;
-    background:linear-gradient(160deg, rgba(16,30,36,.95), rgba(6,16,20,.92));
-    box-shadow:0 10px 26px -10px rgba(0,0,0,.8), 0 0 22px rgba(18,184,176,.34),
-               inset 0 1px 0 rgba(255,255,255,.16);
+    background:linear-gradient(160deg, rgba(28,46,35,.95), rgba(16,28,21,.93));   /* loader green */
+    box-shadow:0 10px 26px -10px rgba(0,0,0,.8), 0 0 22px rgba(203,161,53,.36),
+               inset 0 1px 0 rgba(247,239,224,.18);
   }
   .p-knob svg{ position:relative; z-index:1; display:block; width:100%; height:100%;
     transform:rotate(-90deg); }   /* start the ring at 12 o'clock */
-  .p-ring-bg{ fill:none; stroke:rgba(255,255,255,.2); stroke-width:2.6; }
+  .p-ring-bg{ fill:none; stroke:rgba(247,239,224,.18); stroke-width:2.6; }
   .p-ring{
-    fill:none; stroke:var(--neon-bright); stroke-width:2.6; stroke-linecap:round;
+    fill:none; stroke:var(--gold); stroke-width:2.6; stroke-linecap:round;
     stroke-dasharray:97.39; stroke-dashoffset:97.39;   /* 2 pi r, r = 15.5 */
   }
   .p-pct{
     position:absolute; inset:0; z-index:2;
     display:flex; align-items:center; justify-content:center;
     font-family:var(--font-sans); font-weight:500; font-size:.74rem;
-    color:#fff; font-variant-numeric:tabular-nums; letter-spacing:.02em;
+    color:var(--cream); font-variant-numeric:tabular-nums; letter-spacing:.02em;
   }
   @media (max-width:480px){
     #progress{ right:calc(10px + env(safe-area-inset-right)); width:44px; height:min(44vh,340px); }
