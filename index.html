@@ -784,7 +784,13 @@
   var TOTAL = N1 + N2;                 // 510
   var LAST = TOTAL - 1;               // 509
   var MIN_LOAD = 2800;               // keep the loading screen up at least this long (ms)
-  var PPF = 9;                         // pixels of scroll per frame (cross-faded between frames)
+  // Pixels of scroll per frame (cross-faded between frames). Touch gets a
+  // longer runway: a flick covers far more ground than a wheel notch, so at the
+  // pointer value two swipes tore through the whole sequence. Lenis runs with
+  // syncTouch:false, so touch scrolling is native and its lerp / wheelMultiplier
+  // never apply — this is the only lever on scrub speed for a phone.
+  var coarsePointer = window.matchMedia('(pointer:coarse)').matches;
+  var PPF = coarsePointer ? 15 : 9;
   var SEQ = TOTAL * PPF;              // scroll range that scrubs the frame sequence
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

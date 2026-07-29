@@ -24,9 +24,13 @@ Sebastien-Church-CV.pdf        Served by the "Download CV" button
 og.jpg / favicon.svg           Link-preview image and site icon
 ```
 
-In each tier, frames are numbered globally 0–509 (clip 1 = 0–209, clip 2 = 210–509)
-at 9 px of scroll per frame (`PPF` in index.html). index.html picks the tier by
-viewport aspect ratio.
+In each tier, frames are numbered globally 0–509 (clip 1 = 0–209, clip 2 = 210–509).
+index.html picks the tier by viewport aspect ratio.
+
+Scrub speed is `PPF` in index.html — pixels of scroll per frame. It is 9 for
+pointer devices and 15 for coarse pointers, because a touch flick covers far
+more distance than a wheel notch and the sequence otherwise raced past in two
+swipes. Raise it to slow the scrub down further; the page height follows.
 
 ## Develop / preview locally
 
