@@ -87,6 +87,11 @@
   ::-webkit-scrollbar-thumb{ background:rgba(120,150,220,.3); border-radius:4px; }
   ::-webkit-scrollbar-thumb:hover{ background:rgba(120,150,220,.55); }
   ::-webkit-scrollbar-track{ background:transparent; }
+  /* ...but not for the page itself: #progress is the scroll indicator, and the
+     native bar sat right beside it as a second, competing one. Inner scrollers
+     (the card body) keep theirs — they have no other affordance. */
+  html, body{ scrollbar-width:none; -ms-overflow-style:none; }
+  html::-webkit-scrollbar, body::-webkit-scrollbar{ width:0; height:0; display:none; }
   :focus-visible{ outline-color:var(--neon-bright); }
 
   /* --- The scroll spacer: gives the page its scrollable height --------- */
