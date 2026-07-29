@@ -19,10 +19,14 @@ video1.mp4 / video2.mp4        landscape 16:9 source (title → microscope → s
 portrait1.mp4 / portrait2.mp4  portrait 9:16 source (same beats, framed for phones)
 frames/desktop/                f0000.webp … f0509.webp  (1600px 16:9 — landscape viewports)
 frames/portrait/               f0000.webp … f0509.webp  (1000px 9:16 — portrait viewports)
+img/                           Card photos (referenced by the CARDS array in index.html)
+Sebastien-Church-CV.pdf        Served by the "Download CV" button
+og.jpg / favicon.svg           Link-preview image and site icon
 ```
 
 In each tier, frames are numbered globally 0–509 (clip 1 = 0–209, clip 2 = 210–509)
-at 8 px of scroll per frame. index.html picks the tier by viewport aspect ratio.
+at 9 px of scroll per frame (`PPF` in index.html). index.html picks the tier by
+viewport aspect ratio.
 
 ## Develop / preview locally
 
@@ -45,10 +49,23 @@ bash extract.sh
 REALESRGAN=/path/to/realesrgan-ncnn-vulkan bash extract.sh
 ```
 
+## Contact form
+
+The form posts to [Web3Forms](https://web3forms.com) — no backend. The routing
+address is fixed to whatever the `access_key` hidden input in `index.html` was
+issued for, so a fork needs its own free key swapped in there. Submissions are
+sent with `fetch` (12s timeout) and fall back to a native POST without JS.
+
+## Debug overlay
+
+Append `?debug` to the URL for a live panel showing GPU / hardware-acceleration
+status, FPS, DPR and the canvas backing size — the fastest way to tell whether a
+"laggy" report is actually software rendering.
+
 ## Deploy
 
 Static — deploy the repo as-is (e.g. Vercel: no build command, output = repo root).
-`frames/desktop` (~19 MB) + `frames/portrait` (~22 MB) are committed so no build
+`frames/desktop` (~20 MB) + `frames/portrait` (~28 MB) are committed so no build
 step is required at deploy time.
 
 ## Accessibility & performance

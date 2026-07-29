@@ -28,11 +28,12 @@
 <style>
   /* ============================================================
      SEBASTIEN CHURCH — scroll-scrubbed cinematic portfolio
-     Single file. No frameworks, no runtime dependencies.
+     Single file, no build step. Lenis + GSAP load from CDN and
+     the page degrades to native scroll + CSS if they don't.
      ============================================================ */
 
   :root{
-    --neon:        #12b8b0;               /* spec neon dark blue           */
+    --neon:        #12b8b0;               /* reticle / leader-line teal    */
     --neon-bright: #5eeadd;               /* hover / active intensification */
     --neon-glow:   rgba(18, 184, 176, .8);
     --ink:         #ffffff;
@@ -550,9 +551,11 @@
     <div class="l-track"><div class="l-bar" id="l-bar"></div></div>
   </div>
 
-  <a href="#" id="skip" class="skip">Skip to portfolio</a>
+  <!-- Both hrefs are real fallbacks: JS intercepts them, but with JS off the skip
+       link still reaches the text version and the wordmark still returns to the top. -->
+  <a href="#a11y-content" id="skip" class="skip">Skip to portfolio</a>
   <div id="cursor" aria-hidden="true"></div>
-  <a id="mark" href="#top" aria-label="Back to top">SC</a>
+  <a id="mark" href="#" aria-label="Back to top">SC</a>
 
   <!-- Scrollable height driver -->
   <div id="spacer" aria-hidden="true"></div>
@@ -566,7 +569,8 @@
       <p class="contact-lead">Research, opportunities, or a question about the work — leave a note and it lands straight in Sebastien&rsquo;s inbox.</p>
 
       <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
-        <!-- Replace with a free key from https://web3forms.com (use Sebastien's email) -->
+        <!-- Web3Forms access key. Public by design (it only routes mail to the
+             address it was issued for); rotate it at https://web3forms.com if abused. -->
         <input type="hidden" name="access_key" value="afaaaff6-7358-4bf5-9eec-2d155a14793a" />
         <input type="hidden" name="subject" value="New message from your portfolio" />
         <input type="hidden" name="from_name" value="Sebastien Church — Portfolio" />
@@ -631,7 +635,7 @@
     <section><h2>Field Experience</h2><p>Reserve Combat Medic in Training, Canadian Armed Forces (April 2026 – Present) — initial care and lifesaving interventions for trauma casualties in the field and in clinics. Emergency Responder, Carleton University Student Emergency Response Team, CUSERT (September 2024 – Present).</p></section>
     <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, with a minor in Forensic Psychology, Carleton University (Class of 2027). Entrance Scholarship recipient; former Carleton Ravens Track and Field / Cross Country athlete. Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023); student council Grade 10 representative and Minister of Sports; badminton OFSAA qualifier, top 10 in Ontario for doubles.</p></section>
     <section><h2>Volunteering</h2><p>Vice President Marketing, Medicine4Youth Carleton Chapter (September 2025 – Present). Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – September 2025). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camp des Faucons (July 2019 – August 2021).</p></section>
-    <section><h2>Certifications &amp; Skills</h2><p>Emergency Medical Responder, Canadian Armed Forces (expires June 2029). First Responder, Canadian Red Cross (expires October 2027). Standard First Aid and CPR/AED Level C, Canadian Red Cross (expires November 2028). Mental Health First Aid, Mental Health Commission of Canada (January 2025). WHMIS. Fluently bilingual French and English. Skills: leadership, team coordination, communication, data analysis, community development, R Studio, Microsoft Office.</p></section>
+    <section><h2>Certifications &amp; Skills</h2><p>Emergency Medical Responder, Canadian Armed Forces (expires June 2029). First Responder, Canadian Red Cross (expires October 2027). Standard First Aid and CPR/AED Level C, Canadian Red Cross (expires November 2028). Mental Health First Aid, Mental Health Commission of Canada (January 2025). WHMIS. Fluently bilingual French and English. Skills: leadership, team coordination, communication, data analysis, community development, RStudio, Microsoft Office.</p></section>
   </main>
 
   <noscript>
@@ -736,7 +740,7 @@
         {role:'WHMIS', org:'Workplace Hazardous Materials Information System', date:'', desc:''}
       ],
       text:'Fluently bilingual — French &amp; English.',
-      tags:['Leadership','Team Coordination','Communication','Data Analysis','Community Development','R Studio','Microsoft Office'] }
+      tags:['Leadership','Team Coordination','Communication','Data Analysis','Community Development','RStudio','Microsoft Office'] }
   ];
 
   /* ---------- Elements --------------------------------------------- */
@@ -954,7 +958,8 @@
         labelEls.push(lab);
 
         var z = document.createElement('button');
-        z.className = 'zone'; z.type='button'; z.setAttribute('data-i', idx);
+        z.className = 'zone'; z.type='button'; z.tabIndex = -1;   // out of the tab order until the overlay goes live
+        z.setAttribute('data-i', idx);
         z.setAttribute('aria-label', 'Open ' + a.label.replace('&amp;','and'));
         field.appendChild(z);
         zoneEls.push(z);
@@ -983,7 +988,7 @@
     for(var i=0;i<ANNOT.length;i++){
       (function(idx){
         var chip = document.createElement('button');
-        chip.type = 'button'; chip.className = 'leg-chip';
+        chip.type = 'button'; chip.className = 'leg-chip'; chip.tabIndex = -1;   // ditto
         chip.setAttribute('aria-label', 'Open ' + (short[idx] || ('specimen ' + (idx+1))));
         chip.innerHTML = '<span class="leg-num">' + ('0'+(idx+1)) + '</span>'
                        + '<span class="leg-dot"></span>'
@@ -1099,7 +1104,7 @@
       renderFrame += (targetFrame - renderFrame) * 0.16;
       if(Math.abs(targetFrame - renderFrame) < 0.05) renderFrame = targetFrame;
     }
-    // adaptive resolution: drop to fast 0.8x the instant we move, crisp when settled
+    // adaptive resolution: cap DPR at 1.3 the instant we move, full-res when settled
     if(Math.abs(renderFrame - prevRender) > 0.01){
       if(idleHiRes){ idleHiRes = false; sizeCanvas(); computeCover(); lastDrawn = -1; }
       clearTimeout(idleT); idleT = setTimeout(goHiRes, 150);   // snap stills to full-res sooner after scroll stops
@@ -1156,8 +1161,12 @@
       overlay.classList.toggle('active', active);
       overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
       if(active){ layoutOverlay(); revealAnnotations(); }
-      else if(field.contains(document.activeElement) && document.activeElement.blur){ document.activeElement.blur(); }
+      // check the whole overlay, not just #field — the legend chips live outside it
+      else if(overlay.contains(document.activeElement) && document.activeElement.blur){ document.activeElement.blur(); }
+      // every focusable inside the overlay must leave the tab order while it's
+      // hidden, or Tab lands on invisible controls inside an aria-hidden subtree.
       for(var zi=0; zi<zoneEls.length; zi++){ zoneEls[zi].tabIndex = active ? 0 : -1; }
+      for(var ci=0; ci<legChips.length; ci++){ legChips[ci].tabIndex = active ? 0 : -1; }
     }
     // hide the intro scroll hint once the user has moved
     if(!hintShown && targetFrame > 2){ hintShown = true; hint.classList.remove('show'); }
@@ -1404,9 +1413,23 @@
       form.addEventListener('submit', function(e){
         e.preventDefault();
         var btn = form.querySelector('button[type=submit]');
-        var data = Object.fromEntries(new FormData(form).entries());
+        // FormData -> plain object (not Object.fromEntries: this file targets the
+        // same older browsers the addListener / decode / AbortController guards do).
+        var data = {}, fd = new FormData(form);
+        fd.forEach(function(v, k){ data[k] = v; });
         if(!data.access_key || data.access_key === 'YOUR_WEB3FORMS_ACCESS_KEY'){
           status.className='err'; status.textContent='Contact form isn’t configured yet — add a Web3Forms access key.';
+          return;
+        }
+        // The form is `novalidate` so we own the messaging — but it still has to be
+        // checked, or blank/malformed submissions get POSTed straight through.
+        if(form.checkValidity && !form.checkValidity()){
+          var bad = form.querySelector(':invalid');
+          status.className='err';
+          status.textContent = (bad && bad.type === 'email' && bad.value)
+            ? 'That email address doesn’t look right.'
+            : 'Please fill in your name, email and message.';
+          if(bad && bad.focus) bad.focus();
           return;
         }
         status.className=''; status.textContent='Sending…'; btn.disabled=true;
