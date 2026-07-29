@@ -144,13 +144,18 @@
     right:calc(20px + env(safe-area-inset-right));
     top:50%; transform:translateY(-50%);
     width:54px; height:min(48vh, 420px);
-    /* held back until we're past the title card (JS adds .show, same beat as
-       #mark) — at 0% it says nothing, and on phones it would cut across the
-       full-bleed SEBASTIEN wordmark. */
-    opacity:0; transform:translateY(-50%) translateX(14px);
-    transition:opacity 600ms var(--ease), transform 600ms var(--ease);
+    /* Tucked off the right edge unless you're actively scrolling (JS adds
+       .show). Also held back on the title card, where 0% says nothing and on
+       phones it would cut across the full-bleed SEBASTIEN wordmark.
+       Asymmetric: snaps in so it feels responsive to the scroll, drifts out so
+       the exit is quiet. */
+    opacity:0; transform:translateY(-50%) translateX(26px);
+    transition:opacity 480ms var(--ease), transform 480ms var(--ease);
   }
-  #progress.show{ opacity:1; transform:translateY(-50%) translateX(0); }
+  #progress.show{
+    opacity:1; transform:translateY(-50%) translateX(0);
+    transition-duration:200ms;
+  }
   .p-track{
     position:absolute; left:50%; top:0; margin-left:-4px;
     width:8px; height:100%; border-radius:999px; overflow:hidden;
@@ -860,9 +865,9 @@
   var RING_LEN = 97.39;        // 2 pi r for the r=15.5 ring in the markup
   var progTravel = 0;          // track height in px — cached, never read per frame
   var journeyEnd = 0;          // scroll distance until the contact section's top hits the viewport top
-  var progEnd = 0;             // ...where the rail reads 100% (a little earlier, while contact rises)
-  var progHideAt = 0;          // ...and where it bows out, before it could overlap the form
   var progShown = false;
+  var railIdle = true, railIdleT = null, railLastY = -1;
+  var RAIL_IDLE = 900;         // ms of stillness before the rail tucks away
   var lastPct = -1;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
@@ -1044,7 +1049,6 @@
     // cache the rail's travel once per layout — reading it in updateProgress
     // would force a sync layout on every scrolled frame.
     if(progressEl) progTravel = progressEl.clientHeight;
-    measureHandover();
     // position the overlay field exactly over the drawn frame
     field.style.left = coverRect.x + 'px';
     field.style.top = coverRect.y + 'px';
@@ -1053,36 +1057,15 @@
     layoutOverlay();
   }
 
-  /* Where the rail has to bow out so its reticle never lands on the contact
-     section's content — measured, because it depends entirely on viewport
-     width. The section is a centred column capped at 560px, so on desktop and
-     tablet the rail's column is clear of it and the rail can stay all the way
-     down (progHideAt stays Infinity). Only narrow phones, where the column
-     runs edge to edge, need the hand-over. Nothing in #contact is moved aside
-     for the rail — the rail yields instead. */
-  function measureHandover(){
-    progEnd = Math.max(1, journeyEnd);
-    progHideAt = Infinity;
-    var sec = document.getElementById('contact');
-    if(!progressEl || !sec || !sec.offsetHeight) return;
-    var railRight = parseFloat(window.getComputedStyle(progressEl).right) || 0;
-    var railL = viewW() - railRight - progressEl.offsetWidth;
-    var kids = sec.querySelectorAll('.contact-inner > *');
-    var top = scrollTop(), firstHit = -1;
-    for(var i=0;i<kids.length;i++){
-      var r = kids[i].getBoundingClientRect();
-      if(r.right > railL){                                  // shares the reticle's column
-        var off = (r.top + top) - sec.offsetTop;            // how far into the section it sits
-        if(firstHit < 0 || off < firstHit) firstHit = off;
-      }
-    }
-    if(firstHit < 0) return;                                // column is clear — no hand-over needed
-    // The reticle parks centred on the track's bottom end; content reaches it
-    // once the section has risen that far up the viewport.
-    var knobH = progressKnob ? progressKnob.offsetHeight : 0;
-    var knobBottom = progressEl.getBoundingClientRect().bottom + knobH / 2;
-    progHideAt = journeyEnd - Math.max(0, knobBottom - firstHit);
-    progEnd = Math.max(1, progHideAt - viewH() * 0.15);      // hold at 100% before sliding out
+  /* The rail is a scroll indicator, so it only needs to exist while you are
+     scrolling: it rides in on movement and tucks off the right edge once you
+     settle. That also means it can simply overlay whatever it passes over —
+     nothing on the page has to move aside for it, because by the time you stop
+     to read anything the rail is already gone. */
+  function railGoIdle(){ railIdle = true; syncRail(); }
+  function syncRail(){
+    var on = markShown && !railIdle;
+    if(on !== progShown){ progShown = on; if(progressEl) progressEl.classList.toggle('show', on); }
   }
 
   var built = false;
@@ -1300,9 +1283,14 @@
     // wordmark slides in once we're past the title card
     var sm = renderFrame > 4;
     if(sm !== markShown){ markShown = sm; if(markEl) markEl.classList.toggle('show', sm); }
-    // the rail runs from there to the contact section, then hands over
-    var sp = sm && s < progHideAt;
-    if(sp !== progShown){ progShown = sp; if(progressEl) progressEl.classList.toggle('show', sp); }
+    // any scroll movement wakes the rail and restarts its idle countdown
+    if(s !== railLastY){
+      railLastY = s;
+      railIdle = false;
+      clearTimeout(railIdleT);
+      railIdleT = setTimeout(railGoIdle, RAIL_IDLE);
+    }
+    syncRail();
   }
   // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
   // scroll / resize / frame-load input, so it doesn't burn CPU while idle (PERF-03).
@@ -1331,7 +1319,7 @@
     if(!progressBar) return;
     // full travel ends as the contact section arrives, not at the end of the
     // frame sequence — otherwise the rail sat at 100% for the last screenful.
-    var p = clamp(s / (progEnd || 1), 0, 1);
+    var p = clamp(s / (journeyEnd || 1), 0, 1);
     progressBar.style.transform = 'scaleY(' + p.toFixed(4) + ')';
     // the reticle rides the track and its ring winds up to match
     if(progressKnob) progressKnob.style.transform = 'translate3d(0,' + (p * progTravel).toFixed(1) + 'px,0)';
@@ -1654,8 +1642,6 @@
     // viewport — i.e. the end of the journey, and so the progress denominator.
     journeyEnd = startHold() + SEQ + endHold() + viewH();
     spacer.style.height = journeyEnd + 'px';
-    progEnd = Math.max(1, journeyEnd);   // refined by measureHandover() once #contact is laid out
-    progHideAt = Infinity;
   }
 
   /* ================= BOOT ========================================= */
