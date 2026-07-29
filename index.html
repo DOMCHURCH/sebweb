@@ -122,18 +122,72 @@
   html.has-cursor input, html.has-cursor textarea, html.has-cursor select{ cursor:auto; }
   @media (hover:none),(pointer:coarse){ #cursor{ display:none!important; } }
 
-  /* ================= SCROLL PROGRESS (glass depth rail) ============= */
+  /* ================= SCROLL PROGRESS (right-edge depth rail) ========
+     A thick vertical track pinned to the right edge, with a glass reticle
+     that rides down it — the ring inside fills 0->100% as you descend.
+     It sits in the middle 46% of the viewport, clear of the portrait
+     labels (which live in the 10% / 90% bands). Everything that moves
+     per-frame is a transform or a stroke-dashoffset on a 38px box, so the
+     rail costs nothing on the compositor. */
   #progress{
-    position:fixed; top:0; left:0; right:0; height:2px; z-index:8;
-    background:rgba(255,255,255,.05); pointer-events:none;
-    opacity:0; transition:opacity 900ms var(--ease);
+    position:fixed; z-index:8; pointer-events:none;
+    right:calc(20px + env(safe-area-inset-right));
+    top:50%; transform:translateY(-50%);
+    width:54px; height:min(48vh, 420px);
+    /* held back until we're past the title card (JS adds .show, same beat as
+       #mark) — at 0% it says nothing, and on phones it would cut across the
+       full-bleed SEBASTIEN wordmark. */
+    opacity:0; transform:translateY(-50%) translateX(14px);
+    transition:opacity 600ms var(--ease), transform 600ms var(--ease);
   }
-  #scene.ready ~ #progress{ opacity:1; }
-  #progress > span{
-    display:block; height:100%; width:100%;
-    transform:scaleX(0); transform-origin:0 50%;
-    background:linear-gradient(90deg, var(--neon), var(--neon-bright));
-    box-shadow:0 0 12px var(--neon-glow);
+  #progress.show{ opacity:1; transform:translateY(-50%) translateX(0); }
+  .p-track{
+    position:absolute; left:50%; top:0; margin-left:-4px;
+    width:8px; height:100%; border-radius:999px; overflow:hidden;
+    /* dark core + light rim so the rail holds up over both the black title
+       card and the bright microscope frames it passes over */
+    background:rgba(4,10,14,.5);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+  }
+  /* travelled portion, grown from the top — no shadow, it would smear under
+     the scaleY; the reticle below carries the glow instead. */
+  .p-fill{
+    display:block; width:100%; height:100%;
+    transform:scaleY(0); transform-origin:50% 0;
+    background:linear-gradient(180deg, var(--neon), var(--neon-bright));
+  }
+  .p-knob{
+    position:absolute; left:50%; top:0;
+    width:54px; height:54px; margin:-27px 0 0 -27px;
+    will-change:transform;
+  }
+  /* glass disc behind the ring — static, so it rasterizes once and is only
+     moved by the compositor as the knob travels. Near-opaque so the readout
+     stays legible over the bright eyepiece frames. */
+  .p-knob::before{
+    content:""; position:absolute; inset:3px; border-radius:50%;
+    background:linear-gradient(160deg, rgba(16,30,36,.95), rgba(6,16,20,.92));
+    box-shadow:0 10px 26px -10px rgba(0,0,0,.8), 0 0 22px rgba(18,184,176,.34),
+               inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  .p-knob svg{ position:relative; z-index:1; display:block; width:100%; height:100%;
+    transform:rotate(-90deg); }   /* start the ring at 12 o'clock */
+  .p-ring-bg{ fill:none; stroke:rgba(255,255,255,.2); stroke-width:2.6; }
+  .p-ring{
+    fill:none; stroke:var(--neon-bright); stroke-width:2.6; stroke-linecap:round;
+    stroke-dasharray:97.39; stroke-dashoffset:97.39;   /* 2 pi r, r = 15.5 */
+  }
+  .p-pct{
+    position:absolute; inset:0; z-index:2;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-sans); font-weight:500; font-size:.74rem;
+    color:#fff; font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  }
+  @media (max-width:480px){
+    #progress{ right:calc(10px + env(safe-area-inset-right)); width:44px; height:min(44vh,340px); }
+    .p-track{ width:6px; margin-left:-3px; }
+    .p-knob{ width:44px; height:44px; margin:-22px 0 0 -22px; }
+    .p-pct{ font-size:.64rem; }
   }
 
   /* ================= LOADING SCREEN ================================= */
@@ -150,30 +204,55 @@
   .l-bar{ height:100%; width:0; background:linear-gradient(90deg,#b1622e,#cba135); box-shadow:0 0 10px rgba(203,161,53,.5); transition:width .3s var(--ease); }
   @media (prefers-reduced-motion:reduce){ #loader{ transition-duration:1ms; } .l-bar{ transition:none; } }
 
-  /* ================= SCROLL HINT (intro) ============================ */
+  /* ================= SCROLL HINT (intro) ============================
+     Deliberately loud: the whole site is a scroll experience, so if this
+     cue is missed there is nothing else to click. Mouse outline + running
+     wheel + bobbing chevron, over a soft scrim that lifts it off the frame. */
   #hint{
-    position:fixed; left:50%; bottom:calc(3.2vh + env(safe-area-inset-bottom)); transform:translateX(-50%);
-    z-index:6; text-align:center; pointer-events:none;
-    color:var(--ink-faint);
+    position:fixed; left:50%; bottom:calc(3.4vh + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    z-index:6; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; gap:.8rem;
     opacity:0; transition:opacity 900ms var(--ease);
   }
   #hint.show{ opacity:1; }
   #hint .word{
-    font-weight:300; letter-spacing:.44em; text-transform:uppercase;
-    font-size:.6rem;
+    font-weight:400; letter-spacing:.4em; text-transform:uppercase;
+    font-size:.72rem; color:rgba(255,255,255,.88);
+    padding-left:.4em;                       /* optical centering vs. trailing letter-spacing */
+    text-shadow:0 0 16px var(--neon-glow), 0 2px 12px rgba(0,0,0,.6);
   }
-  #hint .rail{
-    margin:.9rem auto 0; width:1px; height:46px; position:relative;
-    background:rgba(255,255,255,.14); overflow:hidden;
+  #hint .mouse{
+    position:relative; width:27px; height:44px;
+    border:1.6px solid rgba(255,255,255,.55); border-radius:14px;
+    box-shadow:0 0 18px rgba(18,184,176,.34), inset 0 0 14px rgba(18,184,176,.12);
   }
-  #hint .rail::after{
-    content:""; position:absolute; left:0; top:-40%; width:100%; height:40%;
-    background:linear-gradient(180deg, transparent, var(--neon-bright));
+  #hint .mouse span{
+    position:absolute; left:50%; top:8px; margin-left:-2px;
+    width:4px; height:9px; border-radius:2px;
+    background:var(--neon-bright); box-shadow:0 0 10px var(--neon-bright);
   }
-  /* animate ONLY while the intro hint is shown — otherwise this infinite animation
-     keeps the compositor awake every frame for the whole session (hidden at opacity 0). */
-  #hint.show .rail::after{ animation:railrun 1.9s var(--ease) infinite; }
-  @keyframes railrun{ 0%{transform:translateY(-100%)} 60%,100%{transform:translateY(360%)} }
+  #hint .chev{ display:block; width:24px; height:auto; }
+  #hint .chev path{
+    fill:none; stroke:var(--neon-bright); stroke-width:2.2;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  /* animate ONLY while the intro hint is shown — otherwise these infinite animations
+     keep the compositor awake every frame for the whole session (hidden at opacity 0). */
+  #hint.show .mouse span{ animation:wheelrun 1.9s var(--ease) infinite; }
+  #hint.show .chev{ animation:chevbob 1.9s var(--ease) infinite; }
+  @keyframes wheelrun{
+    0%{ transform:translateY(0); opacity:0 }
+    18%{ opacity:1 }
+    65%,100%{ transform:translateY(15px); opacity:0 }
+  }
+  @keyframes chevbob{
+    0%,100%{ transform:translateY(0); opacity:.4 }
+    50%{ transform:translateY(5px); opacity:1 }
+  }
+  @media (max-width:480px){
+    #hint .word{ font-size:.64rem; letter-spacing:.32em; }
+    #hint .mouse{ width:24px; height:39px; }
+  }
 
   /* ================= INTERACTIVE OVERLAY ============================ */
   #overlay{
@@ -533,11 +612,12 @@
 
   /* ================= REDUCED MOTION ================================ */
   @media (prefers-reduced-motion:reduce){
-    #scene, #vignette, #hint, #overlay, #scrim, #card, #progress > span,
+    #scene, #vignette, #hint, #overlay, #scrim, #card, #progress, .p-fill,
     .arrow, .arrow-line, .arrow-head, .label, .label .u{
       transition-duration:1ms !important;
     }
-    #hint .rail::after{ animation:none; }
+    /* the hint stays visible, it just stops moving */
+    #hint .mouse span, #hint .chev{ animation:none !important; }
     #legend, #mark{ transition-duration:1ms !important; }
     .arrow-ring{ animation:none !important; }
   }
@@ -596,7 +676,16 @@
   <canvas id="scene" role="img"
     aria-label="Cinematic sequence: the name Sebastien resolves into a microscope, then pushes through the eyepiece onto a slide with five specimens, each linking to a section of the portfolio."></canvas>
   <div id="vignette" aria-hidden="true"></div>
-  <div id="progress" aria-hidden="true"><span></span></div>
+  <div id="progress" aria-hidden="true">
+    <div class="p-track"><span class="p-fill"></span></div>
+    <div class="p-knob">
+      <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+        <circle class="p-ring-bg" cx="18" cy="18" r="15.5" />
+        <circle class="p-ring" cx="18" cy="18" r="15.5" />
+      </svg>
+      <span class="p-pct">0</span>
+    </div>
+  </div>
 
   <!-- Interactive overlay (fades in on the final frame) -->
   <div id="overlay" aria-hidden="true">
@@ -610,8 +699,9 @@
 
   <!-- Scroll hint -->
   <div id="hint" aria-hidden="true">
-    <div class="word">Scroll</div>
-    <div class="rail"></div>
+    <div class="word">Scroll to explore</div>
+    <div class="mouse"><span></span></div>
+    <svg class="chev" viewBox="0 0 24 15"><path d="M2 2 L12 12 L22 2" /></svg>
   </div>
 
   <!-- Card modal -->
@@ -749,7 +839,13 @@
   var ctx = canvas.getContext('2d');
   var spacer = document.getElementById('spacer');
   var progressEl = document.getElementById('progress');
-  var progressBar = progressEl ? progressEl.firstElementChild : null;
+  var progressBar  = progressEl ? progressEl.querySelector('.p-fill') : null;
+  var progressKnob = progressEl ? progressEl.querySelector('.p-knob') : null;
+  var progressRing = progressEl ? progressEl.querySelector('.p-ring') : null;
+  var progressPct  = progressEl ? progressEl.querySelector('.p-pct')  : null;
+  var RING_LEN = 97.39;        // 2 pi r for the r=15.5 ring in the markup
+  var progTravel = 0;          // track height in px — cached, never read per frame
+  var lastPct = -1;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
   var overlay = document.getElementById('overlay');
@@ -927,6 +1023,9 @@
   function layout(){
     sizeCanvas();
     computeCover();
+    // cache the rail's travel once per layout — reading it in updateProgress
+    // would force a sync layout on every scrolled frame.
+    if(progressEl) progTravel = progressEl.clientHeight;
     // position the overlay field exactly over the drawn frame
     field.style.left = coverRect.x + 'px';
     field.style.top = coverRect.y + 'px';
@@ -1041,6 +1140,22 @@
     var vw = viewW(), vh = viewH();
     var narrow = (TIER === 'portrait');   // portrait tier uses the band layout
 
+    // Keep every label inside the viewport. The leader bases are percentages of
+    // the FRAME, so on aspect ratios that crop the frame horizontally (16:10,
+    // ultrawide) the outer labels are pushed past the screen edge — and the
+    // right-hand column would slide under the progress rail. Clamping the base
+    // drags its leader line along with it, which is what we want.
+    var PAD = 14;
+    var railGutter = 0;
+    if(progressEl && !narrow){            // portrait keeps the rail in the middle band, clear of the labels
+      // from layout metrics, not getBoundingClientRect — the rail carries a
+      // translate while it's hidden, which would understate the gutter.
+      var railRight = parseFloat(window.getComputedStyle(progressEl).right) || 0;
+      railGutter = progressEl.offsetWidth + railRight + 10;
+    }
+    var vxMin = PAD - coverRect.x;                    // field-space x of the left safe edge
+    var vxMax = vw - PAD - railGutter - coverRect.x;  // ...and the right one
+
     for(var i=0;i<ANNOT.length;i++){
       var a = ANNOT[i];
       var sx = a.sx/100*W, sy = a.sy/100*H;   // specimen (always frame-relative)
@@ -1054,6 +1169,18 @@
         bx = a.bx/100*W; by = a.by/100*H; dir = a.dir;
       }
       var el = arrowEls[i];
+
+      // nowrap labels, so offsetWidth is the intrinsic text width. Only read
+      // here — layoutOverlay runs on layout/resize/activation, never per frame.
+      var lw = labelEls[i].offsetWidth || 0;
+      if(dir === 'left'){          // text ends 8px before the base, extends left
+        if(bx - 8 - lw < vxMin) bx = vxMin + lw + 8;
+      } else if(dir === 'center'){ // text straddles the base
+        if(bx - lw/2 < vxMin) bx = vxMin + lw/2;
+        if(bx + lw/2 > vxMax) bx = vxMax - lw/2;
+      } else {                     // text starts 8px after the base, extends right
+        if(bx + 8 + lw > vxMax) bx = vxMax - lw - 8;
+      }
 
       // leader line runs from the label base to just outside the specimen reticle
       var ang = Math.atan2(sy-by, sx-bx);
@@ -1119,9 +1246,12 @@
     prevRender = renderFrame;
     updateProgress(s);
     updateOverlay();
-    if(markEl){
-      var sm = renderFrame > 4;                      // show wordmark once past the title
-      if(sm !== markShown){ markShown = sm; markEl.classList.toggle('show', sm); }
+    // wordmark and progress rail both slide in once we're past the title card
+    var sm = renderFrame > 4;
+    if(sm !== markShown){
+      markShown = sm;
+      if(markEl) markEl.classList.toggle('show', sm);
+      if(progressEl) progressEl.classList.toggle('show', sm);
     }
   }
   // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
@@ -1147,10 +1277,15 @@
     drawBlended(renderFrame, true);
     lastDrawn = Math.round(renderFrame * 6);
   }
-  function updateProgress(s){                       // glass scroll rail: 0..1 through the journey
+  function updateProgress(s){                       // right-edge rail: 0..1 through the journey
     if(!progressBar) return;
     var p = clamp(s / (startHold() + SEQ + endHold()), 0, 1);
-    progressBar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    progressBar.style.transform = 'scaleY(' + p.toFixed(4) + ')';
+    // the reticle rides the track and its ring winds up to match
+    if(progressKnob) progressKnob.style.transform = 'translate3d(0,' + (p * progTravel).toFixed(1) + 'px,0)';
+    if(progressRing) progressRing.style.strokeDashoffset = (RING_LEN * (1 - p)).toFixed(2);
+    var pct = Math.round(p * 100);                  // only touch the DOM text on a whole-percent change
+    if(pct !== lastPct){ lastPct = pct; if(progressPct) progressPct.textContent = pct; }
   }
 
   function updateOverlay(){
