@@ -138,7 +138,9 @@
      per-frame is a transform or a stroke-dashoffset on a 38px box, so the
      rail costs nothing on the compositor. */
   #progress{
-    position:fixed; z-index:8; pointer-events:none;
+    /* above #contact (z-index 20) so the rail is still on screen when it
+       reaches 100% — below #scrim/#card so a modal covers it as before. */
+    position:fixed; z-index:21; pointer-events:none;
     right:calc(20px + env(safe-area-inset-right));
     top:50%; transform:translateY(-50%);
     width:54px; height:min(48vh, 420px);
@@ -503,6 +505,11 @@
       radial-gradient(120% 100% at 50% -10%, rgba(28,58,46,.7), transparent 55%),
       #14231b;
   }
+  /* The rail now sits above this section so it can finish at 100% here, so
+     reserve its column. Wide viewports already clear it: the inner column caps
+     at 560px and the rail starts at vw-74, which only collide below ~708px. */
+  @media (max-width:720px){ #contact{ padding-right:84px; } }
+  @media (max-width:480px){ #contact{ padding-right:64px; } }
   /* ambient WebGL "specimen slide" background (JS-driven, paused when off-screen) */
   #contact-bg{ position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none; }
   /* faint microscope-slide grid echo */
@@ -854,6 +861,7 @@
   var progressPct  = progressEl ? progressEl.querySelector('.p-pct')  : null;
   var RING_LEN = 97.39;        // 2 pi r for the r=15.5 ring in the markup
   var progTravel = 0;          // track height in px — cached, never read per frame
+  var journeyEnd = 0;          // scroll distance to the contact section — 100% lands here
   var lastPct = -1;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
@@ -1288,7 +1296,9 @@
   }
   function updateProgress(s){                       // right-edge rail: 0..1 through the journey
     if(!progressBar) return;
-    var p = clamp(s / (startHold() + SEQ + endHold()), 0, 1);
+    // full travel ends at the contact section, not at the end of the frame
+    // sequence — otherwise the rail sat at 100% for the last screenful.
+    var p = clamp(s / (journeyEnd || 1), 0, 1);
     progressBar.style.transform = 'scaleY(' + p.toFixed(4) + ')';
     // the reticle rides the track and its ring winds up to match
     if(progressKnob) progressKnob.style.transform = 'translate3d(0,' + (p * progTravel).toFixed(1) + 'px,0)';
@@ -1607,7 +1617,10 @@
   })();
 
   function setSpacer(){
-    spacer.style.height = (startHold() + SEQ + endHold() + viewH()) + 'px';
+    // Also the scroll distance until #contact's top reaches the top of the
+    // viewport — i.e. the end of the journey, and so the progress denominator.
+    journeyEnd = startHold() + SEQ + endHold() + viewH();
+    spacer.style.height = journeyEnd + 'px';
   }
 
   /* ================= BOOT ========================================= */
