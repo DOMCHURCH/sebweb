@@ -505,11 +505,9 @@
       radial-gradient(120% 100% at 50% -10%, rgba(28,58,46,.7), transparent 55%),
       #14231b;
   }
-  /* The rail now sits above this section so it can finish at 100% here, so
-     reserve its column. Wide viewports already clear it: the inner column caps
-     at 560px and the rail starts at vw-74, which only collide below ~708px. */
-  @media (max-width:720px){ #contact{ padding-right:84px; } }
-  @media (max-width:480px){ #contact{ padding-right:64px; } }
+  /* No room is reserved for the progress rail here — this section stays
+     centred. The rail instead reaches 100% as the section rises into view and
+     then fades out, so it never sits on the form. */
   /* ambient WebGL "specimen slide" background (JS-driven, paused when off-screen) */
   #contact-bg{ position:absolute; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none; }
   /* faint microscope-slide grid echo */
@@ -861,7 +859,10 @@
   var progressPct  = progressEl ? progressEl.querySelector('.p-pct')  : null;
   var RING_LEN = 97.39;        // 2 pi r for the r=15.5 ring in the markup
   var progTravel = 0;          // track height in px — cached, never read per frame
-  var journeyEnd = 0;          // scroll distance to the contact section — 100% lands here
+  var journeyEnd = 0;          // scroll distance until the contact section's top hits the viewport top
+  var progEnd = 0;             // ...where the rail reads 100% (a little earlier, while contact rises)
+  var progHideAt = 0;          // ...and where it bows out, before it could overlap the form
+  var progShown = false;
   var lastPct = -1;
   var loaderEl = document.getElementById('loader');
   var lBar = document.getElementById('l-bar');
@@ -1043,12 +1044,45 @@
     // cache the rail's travel once per layout — reading it in updateProgress
     // would force a sync layout on every scrolled frame.
     if(progressEl) progTravel = progressEl.clientHeight;
+    measureHandover();
     // position the overlay field exactly over the drawn frame
     field.style.left = coverRect.x + 'px';
     field.style.top = coverRect.y + 'px';
     field.style.width = coverRect.w + 'px';
     field.style.height = coverRect.h + 'px';
     layoutOverlay();
+  }
+
+  /* Where the rail has to bow out so its reticle never lands on the contact
+     section's content — measured, because it depends entirely on viewport
+     width. The section is a centred column capped at 560px, so on desktop and
+     tablet the rail's column is clear of it and the rail can stay all the way
+     down (progHideAt stays Infinity). Only narrow phones, where the column
+     runs edge to edge, need the hand-over. Nothing in #contact is moved aside
+     for the rail — the rail yields instead. */
+  function measureHandover(){
+    progEnd = Math.max(1, journeyEnd);
+    progHideAt = Infinity;
+    var sec = document.getElementById('contact');
+    if(!progressEl || !sec || !sec.offsetHeight) return;
+    var railRight = parseFloat(window.getComputedStyle(progressEl).right) || 0;
+    var railL = viewW() - railRight - progressEl.offsetWidth;
+    var kids = sec.querySelectorAll('.contact-inner > *');
+    var top = scrollTop(), firstHit = -1;
+    for(var i=0;i<kids.length;i++){
+      var r = kids[i].getBoundingClientRect();
+      if(r.right > railL){                                  // shares the reticle's column
+        var off = (r.top + top) - sec.offsetTop;            // how far into the section it sits
+        if(firstHit < 0 || off < firstHit) firstHit = off;
+      }
+    }
+    if(firstHit < 0) return;                                // column is clear — no hand-over needed
+    // The reticle parks centred on the track's bottom end; content reaches it
+    // once the section has risen that far up the viewport.
+    var knobH = progressKnob ? progressKnob.offsetHeight : 0;
+    var knobBottom = progressEl.getBoundingClientRect().bottom + knobH / 2;
+    progHideAt = journeyEnd - Math.max(0, knobBottom - firstHit);
+    progEnd = Math.max(1, progHideAt - viewH() * 0.15);      // hold at 100% before sliding out
   }
 
   var built = false;
@@ -1263,13 +1297,12 @@
     prevRender = renderFrame;
     updateProgress(s);
     updateOverlay();
-    // wordmark and progress rail both slide in once we're past the title card
+    // wordmark slides in once we're past the title card
     var sm = renderFrame > 4;
-    if(sm !== markShown){
-      markShown = sm;
-      if(markEl) markEl.classList.toggle('show', sm);
-      if(progressEl) progressEl.classList.toggle('show', sm);
-    }
+    if(sm !== markShown){ markShown = sm; if(markEl) markEl.classList.toggle('show', sm); }
+    // the rail runs from there to the contact section, then hands over
+    var sp = sm && s < progHideAt;
+    if(sp !== progShown){ progShown = sp; if(progressEl) progressEl.classList.toggle('show', sp); }
   }
   // Fallback (no-Lenis) loop. Self-halts once the frame settles and is re-woken by
   // scroll / resize / frame-load input, so it doesn't burn CPU while idle (PERF-03).
@@ -1296,9 +1329,9 @@
   }
   function updateProgress(s){                       // right-edge rail: 0..1 through the journey
     if(!progressBar) return;
-    // full travel ends at the contact section, not at the end of the frame
-    // sequence — otherwise the rail sat at 100% for the last screenful.
-    var p = clamp(s / (journeyEnd || 1), 0, 1);
+    // full travel ends as the contact section arrives, not at the end of the
+    // frame sequence — otherwise the rail sat at 100% for the last screenful.
+    var p = clamp(s / (progEnd || 1), 0, 1);
     progressBar.style.transform = 'scaleY(' + p.toFixed(4) + ')';
     // the reticle rides the track and its ring winds up to match
     if(progressKnob) progressKnob.style.transform = 'translate3d(0,' + (p * progTravel).toFixed(1) + 'px,0)';
@@ -1621,6 +1654,8 @@
     // viewport — i.e. the end of the journey, and so the progress denominator.
     journeyEnd = startHold() + SEQ + endHold() + viewH();
     spacer.style.height = journeyEnd + 'px';
+    progEnd = Math.max(1, journeyEnd);   // refined by measureHandover() once #contact is laid out
+    progHideAt = Infinity;
   }
 
   /* ================= BOOT ========================================= */
