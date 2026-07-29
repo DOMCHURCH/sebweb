@@ -469,6 +469,23 @@
     margin:.5rem 0 0;
   }
   .card-text{ margin:0 0 1.1rem; }
+
+  /* A work artifact belonging to ONE entry (screenshot, slide, document) —
+     distinct from .card-media, which is a single photo standing for the whole
+     card. Never cropped: these carry text and detail that a cover-fit would
+     cut, so the image keeps its own aspect ratio. */
+  .entry-fig{
+    margin:.9rem 0 0; border-radius:9px; overflow:hidden;
+    background:rgba(42,35,23,.05);
+    border:1px solid rgba(42,35,23,.12);
+  }
+  .entry-fig img{ width:100%; height:auto; display:block; }
+  .entry-fig figcaption{
+    font-weight:400; font-size:.63rem; line-height:1.5; letter-spacing:.04em;
+    color:var(--card-ink-faint);
+    padding:8px 11px 9px;
+    border-top:1px solid rgba(42,35,23,.08);
+  }
   .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:1.3rem; }
   .tag{
     font-weight:500; font-size:.66rem; letter-spacing:.10em;
@@ -831,9 +848,15 @@
     { key:'research', kicker:'01 — Specimen', title:'Research &amp; Lab', img:'',
       entries:[
         {role:'Laboratory Assistant', org:'Carleton University — Neuroscience Lab', date:'May 2025 — Present',
-         desc:'Supporting a PhD thesis on Unreinforced Spatial Learning &amp; Memory in Rats (Massed vs. Spaced Training). Computer-assisted microscopy and c-Fos quantification across defined brain regions, marking and counting cells in Stereo Investigator.'},
+         desc:'Supporting a PhD thesis on Unreinforced Spatial Learning &amp; Memory in Rats (Massed vs. Spaced Training). Computer-assisted microscopy and c-Fos quantification across defined brain regions, marking and counting cells in Stereo Investigator.',
+         img:'img/brain-section.png', w:397, h:231,
+         alt:'Microscopy software showing a fluorescence-labelled coronal brain section in blue, green and red channels.',
+         cap:'Computer-assisted microscopy — a labelled coronal section during cell marking and counting.'},
         {role:'Summer Student Researcher', org:'Canadian Mental Health Association — Ottawa', date:'2024 &amp; 2025',
-         desc:'Diversity, Equity &amp; Inclusion research in mental-health service delivery under Dr. Maryann Roebuck &amp; Dr. Konrad Czechowski (2024); scoped resources for an updated incident-management platform (2025).'}
+         desc:'Diversity, Equity &amp; Inclusion research in mental-health service delivery under Dr. Maryann Roebuck &amp; Dr. Konrad Czechowski (2024); scoped resources for an updated incident-management platform (2025).',
+         img:'img/cmha-dei-review.png', w:1241, h:852,
+         alt:'Title slide reading A Review of Diversity Equity Inclusion (DEI) Training Resources for CMHA Ottawa, by Church Sebastien, Carleton University 2nd year student, BSc Neuroscience.',
+         cap:'Title slide from the DEI training-resource review prepared for CMHA Ottawa.'}
       ],
       tags:['Stereo Investigator','c-Fos quantification','Immunohistochemistry','EEG','DNA / PCR','RStudio'] },
 
@@ -1393,6 +1416,12 @@
             + '</div>'
             + (en.org ? '<div class="entry-org">'+en.org+'</div>' : '')
             + (en.desc ? '<p class="entry-desc">'+en.desc+'</p>' : '')
+            // optional work artifact for this entry — lazy, since a card can
+            // hold several and only the open one is ever on screen
+            + (en.img ? '<figure class="entry-fig"><img src="'+en.img+'" alt="'+(en.alt||'')+'"'
+                      + ' width="'+(en.w||'')+'" height="'+(en.h||'')+'" loading="lazy" decoding="async">'
+                      + (en.cap ? '<figcaption>'+en.cap+'</figcaption>' : '')
+                      + '</figure>' : '')
             + '</div>';
     }
     if(c.text) html += '<p class="card-text">'+c.text+'</p>';
