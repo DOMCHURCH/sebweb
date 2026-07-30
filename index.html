@@ -685,7 +685,7 @@
   /* ================= REDUCED MOTION ================================ */
   @media (prefers-reduced-motion:reduce){
     #scene, #vignette, #hint, #pad-note, #overlay, #scrim, #card, #progress, .p-fill,
-    .arrow, .arrow-line, .arrow-head, .label, .label .u{
+    .arrow, .arrow-line, .label, .label .u{
       transition-duration:1ms !important;
     }
     /* the hint stays visible, it just stops moving */
@@ -707,10 +707,23 @@
        link still reaches the text version and the wordmark still returns to the top. -->
   <a href="#a11y-content" id="skip" class="skip">Skip to portfolio</a>
   <div id="cursor" aria-hidden="true"></div>
-  <a id="mark" href="#" aria-label="Back to top">SC</a>
+  <!-- starts out of the tab order: it is invisible until you're past the title -->
+  <a id="mark" href="#" aria-label="Back to top" tabindex="-1" aria-hidden="true">SC</a>
 
   <!-- Scrollable height driver -->
   <div id="spacer" aria-hidden="true"></div>
+
+  <!-- Text version of the content (screen readers / no-JS / SEO). Out of flow
+       via .sr-only, and placed here so the document opens on its <h1> rather
+       than on the contact section heading. -->
+  <main class="sr-only" id="a11y-content">
+    <h1>Sebastien Church — Neuroscience &amp; Mental Health</h1>
+    <section><h2>Research &amp; Lab</h2><p>Laboratory Assistant, Carleton University Neuroscience Lab (May 2025 – Present) — supporting a PhD thesis on Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training; computer-assisted microscopy and c-Fos quantification in defined brain regions using Stereo Investigator. Summer Student Researcher, Canadian Mental Health Association Ottawa (2024 and 2025) — Diversity, Equity and Inclusion research under Dr. Maryann Roebuck and Dr. Konrad Czechowski, and scoping resources for an updated incident-management platform.</p></section>
+    <section><h2>Field Experience</h2><p>Reserve Combat Medic in Training, Canadian Armed Forces (April 2026 – Present) — initial care and lifesaving interventions for trauma casualties in the field and in clinics. Emergency Responder, Carleton University Student Emergency Response Team, CUSERT (September 2024 – Present).</p></section>
+    <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, with a minor in Forensic Psychology, Carleton University (Class of 2027). Entrance Scholarship recipient; former Carleton Ravens Track and Field / Cross Country athlete. Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023); student council Grade 10 representative and Minister of Sports; badminton OFSAA qualifier, top 10 in Ontario for doubles.</p></section>
+    <section><h2>Volunteering</h2><p>Vice President Marketing, Medicine4Youth Carleton Chapter (September 2025 – Present). Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – September 2025). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camp des Faucons (July 2019 – August 2021).</p></section>
+    <section><h2>Certifications &amp; Skills</h2><p>Emergency Medical Responder, Canadian Armed Forces (expires June 2029). First Responder, Canadian Red Cross (expires October 2027). Standard First Aid and CPR/AED Level C, Canadian Red Cross (expires November 2028). Mental Health First Aid, Mental Health Commission of Canada (January 2025). WHMIS. Fluently bilingual French and English. Skills: leadership, team coordination, communication, data analysis, community development, RStudio, Microsoft Office.</p></section>
+  </main>
 
   <!-- Contact section — scrolls up over the frozen slide, its own dark background -->
   <section id="contact">
@@ -791,16 +804,6 @@
     <div class="card-count" id="card-count"></div>
     <button id="card-next" class="icon-btn" aria-label="Next section">&rsaquo;</button>
   </div>
-
-  <!-- Accessible, always-present text version of the content (SR + SEO) -->
-  <main class="sr-only" id="a11y-content">
-    <h1>Sebastien Church — Neuroscience &amp; Mental Health</h1>
-    <section><h2>Research &amp; Lab</h2><p>Laboratory Assistant, Carleton University Neuroscience Lab (May 2025 – Present) — supporting a PhD thesis on Unreinforced Spatial Learning and Memory in Rats using Massed or Spaced Training; computer-assisted microscopy and c-Fos quantification in defined brain regions using Stereo Investigator. Summer Student Researcher, Canadian Mental Health Association Ottawa (2024 and 2025) — Diversity, Equity and Inclusion research under Dr. Maryann Roebuck and Dr. Konrad Czechowski, and scoping resources for an updated incident-management platform.</p></section>
-    <section><h2>Field Experience</h2><p>Reserve Combat Medic in Training, Canadian Armed Forces (April 2026 – Present) — initial care and lifesaving interventions for trauma casualties in the field and in clinics. Emergency Responder, Carleton University Student Emergency Response Team, CUSERT (September 2024 – Present).</p></section>
-    <section><h2>Education</h2><p>B.Sc. Neuroscience and Mental Health, Honours, with a minor in Forensic Psychology, Carleton University (Class of 2027). Entrance Scholarship recipient; former Carleton Ravens Track and Field / Cross Country athlete. Ontario Secondary School Diploma with Honours, École Secondaire Catholique Franco-Cité (2019 – 2023); student council Grade 10 representative and Minister of Sports; badminton OFSAA qualifier, top 10 in Ontario for doubles.</p></section>
-    <section><h2>Volunteering</h2><p>Vice President Marketing, Medicine4Youth Carleton Chapter (September 2025 – Present). Assistant Track and Field Coach, Grasshopper Hill Run Club (September 2022 – September 2025). Student Volunteer, RA Centre Ottawa badminton camps (July 2019 – August 2023), leading groups of 20–30 children. Summer Camp Counsellor, Camp des Faucons (July 2019 – August 2021).</p></section>
-    <section><h2>Certifications &amp; Skills</h2><p>Emergency Medical Responder, Canadian Armed Forces (expires June 2029). First Responder, Canadian Red Cross (expires October 2027). Standard First Aid and CPR/AED Level C, Canadian Red Cross (expires November 2028). Mental Health First Aid, Mental Health Commission of Canada (January 2025). WHMIS. Fluently bilingual French and English. Skills: leadership, team coordination, communication, data analysis, community development, RStudio, Microsoft Office.</p></section>
-  </main>
 
   <noscript>
     <div id="nojs">This portfolio is an interactive, scroll-driven experience that requires JavaScript. Please enable it — or view the text version above with a screen reader.</div>
@@ -1443,7 +1446,16 @@
     updateOverlay();
     // wordmark slides in once we're past the title card
     var sm = renderFrame > 4;
-    if(sm !== markShown){ markShown = sm; if(markEl) markEl.classList.toggle('show', sm); }
+    if(sm !== markShown){
+      markShown = sm;
+      if(markEl){
+        markEl.classList.toggle('show', sm);
+        // it sits at opacity 0 until then, and an invisible control must not be
+        // tabbable or announced (same rule as the specimen zones and chips)
+        markEl.tabIndex = sm ? 0 : -1;
+        markEl.setAttribute('aria-hidden', sm ? 'false' : 'true');
+      }
+    }
     // any scroll movement wakes the rail and restarts its idle countdown
     if(s !== railLastY){
       railLastY = s;
