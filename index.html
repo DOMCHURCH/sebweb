@@ -264,6 +264,22 @@
     #hint .mouse{ width:24px; height:39px; }
   }
 
+  /* trackpad note, bottom-left. Hidden by default and only shown for a fine
+     pointer: "two fingers" is a trackpad gesture, meaningless on touch. */
+  #pad-note{
+    display:none;
+    position:fixed; z-index:7; pointer-events:none; margin:0;
+    left:calc(18px + env(safe-area-inset-left));
+    bottom:calc(16px + env(safe-area-inset-bottom));
+    font-family:var(--font-sans); font-weight:300;
+    font-size:.56rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--ink-faint);
+    text-shadow:0 1px 10px rgba(0,0,0,.8);
+    opacity:0; transition:opacity 700ms var(--ease);
+  }
+  @media (hover:hover) and (pointer:fine){ #pad-note{ display:block; } }
+  #pad-note.show{ opacity:1; }
+
   /* ================= INTERACTIVE OVERLAY ============================ */
   #overlay{
     position:fixed; inset:0; z-index:5;
@@ -661,7 +677,7 @@
 
   /* ================= REDUCED MOTION ================================ */
   @media (prefers-reduced-motion:reduce){
-    #scene, #vignette, #hint, #overlay, #scrim, #card, #progress, .p-fill,
+    #scene, #vignette, #hint, #pad-note, #overlay, #scrim, #card, #progress, .p-fill,
     .arrow, .arrow-line, .arrow-head, .label, .label .u{
       transition-duration:1ms !important;
     }
@@ -751,6 +767,10 @@
     <div class="mouse"><span></span></div>
     <svg class="chev" viewBox="0 0 24 15"><path d="M2 2 L12 12 L22 2" /></svg>
   </div>
+
+  <!-- Trackpad note. Pointer devices only — a two-finger gesture means nothing
+       on a phone. Clears once the visitor actually scrolls. -->
+  <p id="pad-note" aria-hidden="true">Use two fingers to scroll up or down</p>
 
   <!-- Card modal -->
   <div id="scrim"></div>
@@ -969,6 +989,7 @@
   var ring = document.getElementById('ring');
   var wires = document.getElementById('wires');
   var hint = document.getElementById('hint');
+  var padNote = document.getElementById('pad-note');
   var scrim = document.getElementById('scrim');
   var card = document.getElementById('card');
   var cardScroll = document.getElementById('card-scroll');
@@ -1087,7 +1108,8 @@
       }
     } catch(e){}
     // reveal scroll hint shortly after
-    setTimeout(function(){ if(!hintShown){ hint.classList.add('show'); } }, 700);
+    setTimeout(function(){ if(!hintShown){ hint.classList.add('show');
+      if(padNote) padNote.classList.add('show'); } }, 700);
     // Lenis drives renderTick via the GSAP ticker; otherwise use a plain rAF loop
     if(!lenis){ wake(); }
   }
@@ -1475,7 +1497,11 @@
       for(var ci=0; ci<legChips.length; ci++){ legChips[ci].tabIndex = active ? 0 : -1; }
     }
     // hide the intro scroll hint once the user has moved
-    if(!hintShown && targetFrame > 2){ hintShown = true; hint.classList.remove('show'); }
+    if(!hintShown && targetFrame > 2){
+      hintShown = true;
+      hint.classList.remove('show');
+      if(padNote) padNote.classList.remove('show');   // they've scrolled — note has done its job
+    }
   }
 
   /* ================= CARD =========================================== */
