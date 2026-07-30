@@ -806,6 +806,21 @@
   var PPF = coarsePointer ? 15 : 9;
   var SEQ = TOTAL * PPF;              // scroll range that scrubs the frame sequence
 
+  /* ---------- Scrub smoothness ---------------------------------------
+     SUBSTEPS  cross-fade positions rendered per source frame. The redraw is
+               skipped unless the quantised position moves, so this is really
+               "how finely the fade is stepped" — 510 frames x 10 = 5100
+               distinct images along the journey instead of 3060.
+     BLEND_MAX frames-per-tick above which the cross-fade is dropped. Fast
+               motion hides the stepping, and the second draw is the expensive
+               half; below this the fade stays on so mid-speed scrolls glide.
+     SCRUB_LERP easing applied to the frame position when Lenis is absent
+               (reduced motion, or the CDN failed). Lower = smoother, floatier;
+               higher = tighter to the finger. Lenis has its own, set below. */
+  var SUBSTEPS   = 6;
+  var BLEND_MAX  = 1.8;
+  var SCRUB_LERP = 0.13;
+
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Portrait / narrow viewports load the 9:16 clips; wider ones get the 16:9 set.
   // (aspect ratio <= 1 -> portrait orientation.)
@@ -1060,7 +1075,9 @@
     canvas.style.height = vh + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = idleHiRes ? 'high' : 'medium';   // crisp stills, lighter per-frame cost while scrolling
+    // 'low' while moving: the second cross-fade draw doubles the downscale cost,
+    // and at these near-1:1 scales the difference is invisible in motion.
+    ctx.imageSmoothingQuality = idleHiRes ? 'high' : 'low';
   }
 
   function computeCover(){
@@ -1340,7 +1357,7 @@
     if(lenis || reduceMotion){
       renderFrame = targetFrame;                    // Lenis already smooths the scroll input
     } else {
-      renderFrame += (targetFrame - renderFrame) * 0.16;
+      renderFrame += (targetFrame - renderFrame) * SCRUB_LERP;
       if(Math.abs(targetFrame - renderFrame) < 0.05) renderFrame = targetFrame;
     }
     // adaptive resolution: cap DPR at 1.3 the instant we move, full-res when settled
@@ -1348,11 +1365,11 @@
       if(idleHiRes){ idleHiRes = false; sizeCanvas(); computeCover(); lastDrawn = -1; }
       clearTimeout(idleT); idleT = setTimeout(goHiRes, 150);   // snap stills to full-res sooner after scroll stops
     }
-    // redraw only when the quantized blended position actually moves (6 steps/frame)
-    var q = Math.round(renderFrame * 6);
+    // redraw only when the quantized blended position actually moves
+    var q = Math.round(renderFrame * SUBSTEPS);
     if(q !== lastDrawn){
       lastDrawn = q;
-      var fast = Math.abs(renderFrame - prevRender) > 1.5;   // whip-scroll -> skip the blend
+      var fast = Math.abs(renderFrame - prevRender) > BLEND_MAX;   // whip-scroll -> skip the blend
       drawBlended(renderFrame, !fast);
     }
     prevRender = renderFrame;
@@ -1391,7 +1408,7 @@
     idleHiRes = true;
     sizeCanvas(); computeCover();
     drawBlended(renderFrame, true);
-    lastDrawn = Math.round(renderFrame * 6);
+    lastDrawn = Math.round(renderFrame * SUBSTEPS);
   }
   function updateProgress(s){                       // right-edge rail: 0..1 through the journey
     if(!progressBar) return;
@@ -1730,7 +1747,9 @@
   function initSmooth(){
     if(reduceMotion) return;                                  // reduced motion: native scroll, no smoothing
     if(typeof Lenis === 'undefined' || !window.gsap) return;  // CDN unavailable -> graceful fallback
-    lenis = new Lenis({ lerp:0.16, wheelMultiplier:1, smoothWheel:true, syncTouch:false });  // snappier response
+    // lerp: lower glides more, higher tracks the wheel more tightly. Only
+    // affects pointer devices — syncTouch:false leaves touch scrolling native.
+    lenis = new Lenis({ lerp:0.13, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
     window.__lenis = lenis;
     gsap.ticker.add(function(time){ lenis.raf(time * 1000); renderTick(); });
     gsap.ticker.lagSmoothing(0);
