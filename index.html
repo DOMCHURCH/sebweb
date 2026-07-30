@@ -958,6 +958,7 @@
   var RING_LEN = 97.39;        // 2 pi r for the r=15.5 ring in the markup
   var progTravel = 0;          // track height in px — cached, never read per frame
   var journeyEnd = 0;          // scroll distance until the contact section's top hits the viewport top
+  var maxScrollY = 0;          // full document scroll range — cached for the scroll watchdog
   var progShown = false;
   var railIdle = true, railIdleT = null, railLastY = -1;
   var RAIL_IDLE = 900;         // ms of stillness before the rail tucks away
@@ -1778,24 +1779,82 @@
     // viewport — i.e. the end of the journey, and so the progress denominator.
     journeyEnd = startHold() + SEQ + endHold() + viewH();
     spacer.style.height = journeyEnd + 'px';
+    // cached for the scroll watchdog — reading scrollHeight on every wheel
+    // event would force a layout, and trackpads fire a lot of them
+    maxScrollY = Math.max(0, document.documentElement.scrollHeight - viewH());
   }
 
   /* ================= BOOT ========================================= */
+
+  /* Hand scrolling back to the browser and never touch Lenis again.
+     Lenis calls preventDefault on wheel events, so ANY failure in it — a
+     dead rAF loop, an exception, being left stopped, a breaking change in a
+     future 1.x from the unpinned CDN range — stops the page dead rather than
+     merely losing the easing. Native scroll is the safe state: the scrub then
+     runs off the fallback rAF loop and everything still works. */
+  function releaseSmooth(why){
+    if(!lenis) return;
+    try { lenis.destroy(); } catch(e){}
+    lenis = null; window.__lenis = null;
+    window.__smooth = 'native — Lenis released (' + why + ')';
+    lastDrawn = -1;
+    wake();
+  }
+
+  /* Watchdog. If wheel input is arriving, the page has somewhere to go, and
+     yet nothing moves, then something is swallowing the events — bail out.
+     Cheap to be wrong: the cost is losing smooth easing, and the alternative
+     is a visitor who simply cannot scroll. Especially so now the native
+     scrollbar is hidden, which used to be the manual way out. */
+  function initScrollWatchdog(){
+    var stuckCount = 0, lastY = -1, manual = false;
+    window.addEventListener('wheel', function(e){
+      if(cardOpen){ stuckCount = 0; return; }
+      var y = scrollTop();
+      // Stage 2: nothing else worked, so move the page ourselves. Listener is
+      // passive, so this adds scrolling rather than fighting anyone for it —
+      // and it only ever engages after the page has proved to be frozen.
+      if(manual){ window.scrollTo(0, clamp(y + e.deltaY, 0, maxScrollY)); return; }
+      if(y !== lastY){ lastY = y; stuckCount = 0; return; }   // it moved — all good
+      // ignore the ends, where not moving is the correct behaviour
+      var room = (e.deltaY > 0 && y < maxScrollY - 2) || (e.deltaY < 0 && y > 2);
+      if(!room){ stuckCount = 0; return; }
+      if(++stuckCount < 15) return;
+      stuckCount = 0;
+      // Stage 1: drop Lenis and let the browser scroll normally.
+      if(lenis) releaseSmooth('wheel input was not moving the page');
+      // Stage 1 didn't help — whatever is eating the events isn't ours.
+      else { manual = true; window.__smooth = 'manual — wheel events are being swallowed'; }
+    }, { passive:true });
+  }
+
   function initSmooth(){
     if(reduceMotion) return;                                  // reduced motion: native scroll, no smoothing
     if(typeof Lenis === 'undefined' || !window.gsap) return;  // CDN unavailable -> graceful fallback
-    // lerp: lower glides more, higher tracks the wheel more tightly. Only
-    // affects pointer devices — syncTouch:false leaves touch scrolling native.
-    // 0.10 is Lenis's own default; it spreads a wheel notch over enough ticks
-    // that every one of them lands inside the blend budget and gets a fade.
-    lenis = new Lenis({ lerp:0.10, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
+    try {
+      // lerp: lower glides more, higher tracks the wheel more tightly. Only
+      // affects pointer devices — syncTouch:false leaves touch scrolling native.
+      // 0.10 is Lenis's own default; it spreads a wheel notch over enough ticks
+      // that every one of them lands inside the blend budget and gets a fade.
+      lenis = new Lenis({ lerp:0.10, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
+    } catch(e){ lenis = null; window.__smooth = 'native — Lenis failed to start'; return; }
     window.__lenis = lenis;
-    gsap.ticker.add(function(time){ lenis.raf(time * 1000); renderTick(); });
+    window.__smooth = 'lenis';
+    // Guarded: an exception in here would otherwise take the whole ticker with
+    // it, which would stop renderTick AND leave Lenis eating wheel events.
+    gsap.ticker.add(function(time){
+      if(lenis){
+        try { lenis.raf(time * 1000); }
+        catch(e){ releaseSmooth('Lenis threw during rAF'); }
+      }
+      renderTick();
+    });
     gsap.ticker.lagSmoothing(0);
   }
   setSpacer();
   sizeCanvas();
   initSmooth();
+  initScrollWatchdog();
   preload();
 
 })();
@@ -1913,7 +1972,8 @@
       'DPR '+(window.devicePixelRatio||1)+'  cores '+(navigator.hardwareConcurrency||'?')+
         '  mem '+(navigator.deviceMemory||'?')+'GB\n'+
       'canvas backing: '+(cv?cv.width:'?')+'×'+(cv?cv.height:'?')+'\n'+
-      'cross-fade budget: '+(window.__blend||'?');
+      'cross-fade budget: '+(window.__blend||'?')+'\n'+
+      'scrolling: '+(window.__smooth||'native');
     box.style.borderColor = g.soft ? 'rgba(255,90,90,.8)' : 'rgba(120,224,214,.6)';
     box.style.color = g.soft ? '#ffd7d7' : '#dfe';
   }
