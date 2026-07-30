@@ -793,7 +793,10 @@
   var N1 = 210, N2 = 300;              // video1 = frames 0..209, video2 = 210..509
   var TOTAL = N1 + N2;                 // 510
   var LAST = TOTAL - 1;               // 509
-  var MIN_LOAD = 2800;               // keep the loading screen up at least this long (ms)
+  var MIN_LOAD = 1600;               // minimum splash time (ms) — a brand beat, not a buffer wait.
+                                     // The loader is usually ready well before this now, so this
+                                     // number IS the load time most people see. Raise for more of
+                                     // a moment, lower to get to the title faster.
   // Pixels of scroll per frame (cross-faded between frames). Touch gets a
   // longer runway: a flick covers far more ground than a wheel notch, so at the
   // pointer value two swipes tore through the whole sequence. Lenis runs with
@@ -925,7 +928,6 @@
   /* ---------- State ------------------------------------------------- */
   var images = new Array(TOTAL);
   var loaded = 0;
-  var maxReady = -1;                    // highest contiguously-loaded frame index
   var ready = false;
   var targetFrame = 0, renderFrame = 0, lastDrawn = -1, prevRender = 0;
   var idleHiRes = true, idleT;                       // crisp when settled, low-res while scrolling
@@ -954,32 +956,56 @@
   // swipe's momentum blows through the specimens otherwise.
   function endHold(){ return Math.round(viewH() * (portraitTier ? 4 : 2.5)); }
 
-  /* ================= PRELOAD ======================================= */
+  /* ================= PRELOAD =======================================
+     The portrait tier is ~26 MB across 510 frames. No phone has that in hand
+     before the user starts scrolling, so ORDER matters far more than raw
+     throughput: load a coarse skeleton across the whole sequence and refine
+     it, rather than filling 0 -> 509 in sequence.
+
+     Two things follow. The splash can lift after a dozen frames instead of
+     200 (5.5 MB of waiting), and once the skeleton is in, any scroll position
+     has a real frame within a few of it — so outrunning the loader costs
+     detail rather than freezing the scrub (see nearestLoaded). */
+  function loadOrder(){
+    var q = [], seen = {};
+    function push(i){ if(i >= 0 && i <= LAST && !seen[i]){ seen[i] = 1; q.push(i); } }
+    push(0);                                        // the title card, where everyone starts
+    for(var t = TOTAL - 6; t < TOTAL; t++) push(t);  // the specimen slide, where the skip link lands
+    var steps = [32, 16, 8, 4, 2, 1];               // each pass doubles the density
+    for(var s = 0; s < steps.length; s++)
+      for(var i = 0; i < TOTAL; i += steps[s]) push(i);
+    return q;
+  }
+
   function preload(){
-    var CONC = 12, next = 0, done = 0, active = 0;
-    var REVEAL = 200;                         // buffer a big chunk so the splash lasts ~ the real load
-    function advanceReady(){
-      while(maxReady + 1 < TOTAL){
-        var nx = images[maxReady + 1];
-        // advance past frames that loaded OR permanently failed, so one missing
-        // early frame can't wedge the loader forever (BUG-06).
-        if(nx && nx.complete && (nx.naturalWidth || nx.failed)){ maxReady++; } else break;
+    var CONC = 10, done = 0, active = 0;
+    var REVEAL_N = 12;                        // open on this many; the rest streams in behind
+    var order = loadOrder(), qi = 0;
+    function bump(i){
+      loaded++;
+      if(lBar) lBar.style.width = Math.min(100, Math.round(loaded / REVEAL_N * 100)) + '%';
+      if(!ready){
+        if(loaded >= REVEAL_N || done >= TOTAL) reveal();
+      } else if(Math.abs(i - renderFrame) < 32){
+        lastDrawn = -1; wake();               // a sharper frame landed near the playhead
       }
-      if(!ready && (maxReady + 1 >= REVEAL || done >= TOTAL)) reveal();
-      else if(ready) wake();     // newly-loaded frames may let a clamped scrub catch up
     }
-    function bump(){ loaded++; if(lBar){ lBar.style.width = Math.min(100, Math.round(loaded / REVEAL * 100)) + '%'; } }
     function one(i){
       var img = new Image();
       img.decoding = 'async';
       images[i] = img;
-      function fin(){ active--; done++; bump(); advanceReady(); if(done < TOTAL) pump(); }
+      function fin(){ active--; done++; bump(i); if(done < TOTAL) pump(); }
       img.onload = function(){ if(img.decode){ img.decode().then(fin, fin); } else { fin(); } };
       img.onerror = function(){ img.failed = true; fin(); };  // mark + skip a missing frame
       img.src = framePath(i);
     }
-    function pump(){ while(active < CONC && next < TOTAL){ if(images[next]){ next++; continue; } active++; one(next++); } }
-    for(var t = Math.max(0, TOTAL - 16); t < TOTAL; t++){ if(!images[t]){ active++; one(t); } }   // specimen frames first
+    function pump(){
+      while(active < CONC && qi < order.length){
+        var i = order[qi++];
+        if(images[i]) continue;               // already queued by an earlier, coarser pass
+        active++; one(i);
+      }
+    }
     pump();
     setTimeout(function(){ if(!ready) reveal(); }, 8000);   // failsafe: never hang the splash
   }
@@ -1065,20 +1091,33 @@
     ctx.clearRect(0,0,vw,vh);
     paint(i, 1);
   }
+  // Closest frame that is actually decoded, searching outward from i. With the
+  // skeleton pass in memory this resolves within a few steps. It replaces the
+  // old "clamp to the highest CONTIGUOUS frame" rule, which is what made an
+  // unfinished load feel broken: scrolling past the loaded run pinned the
+  // canvas to that frame and the scrub appeared to seize. Now you get the
+  // nearest real frame and the picture simply sharpens as gaps fill in.
+  function nearestLoaded(i){
+    if(drawable(i)) return i;
+    for(var d = 1; d <= TOTAL; d++){
+      if(i - d >= 0 && drawable(i - d)) return i - d;
+      if(i + d <= LAST && drawable(i + d)) return i + d;
+    }
+    return -1;
+  }
   // Cross-fade adjacent frames by the fractional scroll position, so a 510-frame
   // sequence reads as continuous motion instead of stepping frame-to-frame.
   function drawBlended(pos, blend){
-    var f0 = Math.floor(pos), frac = pos - f0, f1 = f0 + 1;
-    if(f0 > maxReady && !drawable(f0)) f0 = maxReady;
-    if(f1 > maxReady && !drawable(f1)) f1 = maxReady;
-    if(f1 > LAST) f1 = LAST;
-    if(f0 < 0 || !drawable(f0)) return;            // base frame missing -> hold, don't flash black
+    var f0 = clamp(Math.floor(pos), 0, LAST), frac = pos - Math.floor(pos);
+    var base = nearestLoaded(f0);
+    if(base < 0) return;                           // nothing decoded yet -> hold, don't flash black
     var vw = viewW(), vh = viewH();
     ctx.clearRect(0,0,vw,vh);
-    paint(f0, 1);
-    // second draw (cross-fade) only when scrolling slowly — fast motion hides the
-    // frame steps, so we skip the extra fill and keep the scrub cheap.
-    if(blend && f1 !== f0 && frac > 0.02) paint(f1, frac);
+    paint(base, 1);
+    // only cross-fade when we have the exact frame AND its successor; blending
+    // across a gap in the skeleton would smear two dissimilar frames together
+    // (fast motion hides frame steps anyway, so `blend` is off during whip-scrolls)
+    if(blend && base === f0 && frac > 0.02 && f0 < LAST && drawable(f0 + 1)) paint(f0 + 1, frac);
   }
 
   /* ================= LAYOUT (cover rect -> overlay field) ========= */
