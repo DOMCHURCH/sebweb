@@ -809,17 +809,52 @@
   /* ---------- Scrub smoothness ---------------------------------------
      SUBSTEPS  cross-fade positions rendered per source frame. The redraw is
                skipped unless the quantised position moves, so this is really
-               "how finely the fade is stepped" — 510 frames x 10 = 5100
-               distinct images along the journey instead of 3060.
-     BLEND_MAX frames-per-tick above which the cross-fade is dropped. Fast
-               motion hides the stepping, and the second draw is the expensive
-               half; below this the fade stays on so mid-speed scrolls glide.
-     SCRUB_LERP easing applied to the frame position when Lenis is absent
-               (reduced motion, or the CDN failed). Lower = smoother, floatier;
-               higher = tighter to the finger. Lenis has its own, set below. */
+               "how finely the fade is stepped". 6 already redraws about every
+               2px of scroll; raising it costs frames and buys nothing visible.
+     BLEND_HI/LO frames-per-tick above which the cross-fade is dropped, i.e.
+               the frame is drawn as a hard cut. The second draw is the
+               expensive half, so this trades cost against stepping.
+
+               A mouse wheel moves in ~100px notches, and at PPF 9 that is
+               ~11 source frames per notch — eased out, ~2.5 frames per tick
+               with peaks near 3.8. At 1.8 that meant ~62% of ticks during a
+               wheel spin rendered with no blend at all, which is what made
+               the laptop scrub look blocky. 4 covers the whole range.
+               Touch keeps the lower value: a phone has far less headroom for
+               a second full-frame draw, and PPF 15 there already halves the
+               frames-per-tick a flick produces.
+     SCRUB_LERP easing on the frame position when Lenis is absent (the CDN
+               failed). Deliberately a touch tighter than the Lenis lerp — on
+               this path the same easing also delays stills sharpening back to
+               full resolution, since that waits for the scrub to settle. */
   var SUBSTEPS   = 6;
-  var BLEND_MAX  = 1.8;
+  var BLEND_HI   = coarsePointer ? 1.8 : 4;
+  var BLEND_LO   = 1.2;
   var SCRUB_LERP = 0.13;
+
+  /* The blend budget is not fixed, because the machines differ far more than
+     the setting could. A GPU-composited laptop draws two full frames a tick
+     without noticing; with hardware acceleration off the same work runs about
+     twice a 60fps budget, and this site does get opened on such machines —
+     that is what ?debug exists to report. So start generous and measure: if
+     frames are genuinely running long, fall back to cutting instead of
+     fading, and climb back once they recover. Hysteresis on both edges so it
+     settles rather than flapping. */
+  var blendMax = BLEND_HI, tickT = 0, slowRun = 0, budgetFrom = 0;
+  function budgetBlend(now){
+    var dt = tickT ? now - tickT : 0;
+    tickT = now;
+    // One-way. Recovery would oscillate: once we stop blending the frames get
+    // fast again precisely BECAUSE we stopped, which reads as "afford it" and
+    // promotes straight back. A machine's capability doesn't change mid-visit.
+    if(blendMax === BLEND_LO) return;
+    if(now < budgetFrom) return;               // grace period — decoding is heaviest right after reveal
+    if(dt <= 0 || dt > 200) return;            // startup, or a gap (tab hidden, card open)
+    if(dt > 28){                                             // 8 consecutive missed 30fps beats
+      if(++slowRun >= 8){ blendMax = BLEND_LO; window.__blend = 'LO (eased off — slow frames)'; }
+    } else slowRun = 0;
+  }
+  window.__blend = 'HI';                       // surfaced by the ?debug overlay
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Portrait / narrow viewports load the 9:16 clips; wider ones get the 16:9 set.
@@ -1034,6 +1069,7 @@
     var elapsed = (window.performance && performance.now) ? performance.now() : MIN_LOAD;
     if(elapsed < MIN_LOAD){ setTimeout(reveal, MIN_LOAD - elapsed); return; }  // hold the splash a beat longer
     ready = true;
+    budgetFrom = elapsed + 2500;               // don't judge frame cost while decoding is still heavy
     body.classList.remove('is-loading');
     if(loaderEl) loaderEl.classList.add('done');
     canvas.classList.add('ready');              // fade the first frame up from black
@@ -1349,7 +1385,8 @@
 
   function renderTick(){
     if(!ready) return;
-    if(cardOpen) return;                            // frame is frozen behind the card — skip work
+    if(cardOpen){ tickT = 0; return; }               // frame is frozen behind the card — skip work
+    budgetBlend(performance.now());
     var s = scrollTop();
     var HOLD = startHold();                         // hold on the title before scrubbing begins
     var fpos = s <= HOLD ? 0 : (s - HOLD) / PPF;    // FLOAT frame position -> enables cross-fade
@@ -1369,7 +1406,7 @@
     var q = Math.round(renderFrame * SUBSTEPS);
     if(q !== lastDrawn){
       lastDrawn = q;
-      var fast = Math.abs(renderFrame - prevRender) > BLEND_MAX;   // whip-scroll -> skip the blend
+      var fast = Math.abs(renderFrame - prevRender) > blendMax;   // whip-scroll -> skip the blend
       drawBlended(renderFrame, !fast);
     }
     prevRender = renderFrame;
@@ -1749,7 +1786,9 @@
     if(typeof Lenis === 'undefined' || !window.gsap) return;  // CDN unavailable -> graceful fallback
     // lerp: lower glides more, higher tracks the wheel more tightly. Only
     // affects pointer devices — syncTouch:false leaves touch scrolling native.
-    lenis = new Lenis({ lerp:0.13, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
+    // 0.10 is Lenis's own default; it spreads a wheel notch over enough ticks
+    // that every one of them lands inside the blend budget and gets a fade.
+    lenis = new Lenis({ lerp:0.10, wheelMultiplier:1, smoothWheel:true, syncTouch:false });
     window.__lenis = lenis;
     gsap.ticker.add(function(time){ lenis.raf(time * 1000); renderTick(); });
     gsap.ticker.lagSmoothing(0);
@@ -1873,7 +1912,8 @@
       'FPS: '+fps+'   min: '+(minf===999?'…':minf)+'   (scroll to test)\n'+
       'DPR '+(window.devicePixelRatio||1)+'  cores '+(navigator.hardwareConcurrency||'?')+
         '  mem '+(navigator.deviceMemory||'?')+'GB\n'+
-      'canvas backing: '+(cv?cv.width:'?')+'×'+(cv?cv.height:'?');
+      'canvas backing: '+(cv?cv.width:'?')+'×'+(cv?cv.height:'?')+'\n'+
+      'cross-fade budget: '+(window.__blend||'?');
     box.style.borderColor = g.soft ? 'rgba(255,90,90,.8)' : 'rgba(120,224,214,.6)';
     box.style.color = g.soft ? '#ffd7d7' : '#dfe';
   }
