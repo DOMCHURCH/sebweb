@@ -264,9 +264,10 @@
     #hint .mouse{ width:24px; height:39px; }
   }
 
-  /* scroll note, bottom-left. Shown on every device; the wording is swapped in
-     JS, since "two fingers" is a trackpad gesture and a phone scrolls with one. */
+  /* trackpad note, bottom-left. Hidden by default and only shown for a fine
+     pointer: "two fingers" is a trackpad gesture, and a phone scrolls with one. */
   #pad-note{
+    display:none;
     position:fixed; z-index:7; pointer-events:none; margin:0;
     left:calc(18px + env(safe-area-inset-left));
     bottom:calc(16px + env(safe-area-inset-bottom));
@@ -276,10 +277,12 @@
     text-shadow:0 1px 10px rgba(0,0,0,.8);
     opacity:0; transition:opacity 700ms var(--ease);
   }
+  @media (hover:hover) and (pointer:fine){ #pad-note{ display:block; } }
   #pad-note.show{ opacity:1; }
-  /* Narrow screens: the centred scroll hint reaches across to the note's
-     column (it collides once the viewport drops under ~600px), so lift the
-     note clear of the hint stack instead of letting the chevron sit on it. */
+  /* Still needed even though phones never see this: a laptop window dragged
+     narrow keeps its fine pointer, so the note shows, and under ~600px the
+     centred scroll hint reaches into its column — the chevron landed on the
+     word SCROLL. Lift it clear of the hint stack rather than beside it. */
   @media (max-width:620px){
     #pad-note{ bottom:calc(3.4vh + env(safe-area-inset-bottom) + 112px); }
   }
@@ -772,7 +775,7 @@
     <svg class="chev" viewBox="0 0 24 15"><path d="M2 2 L12 12 L22 2" /></svg>
   </div>
 
-  <!-- Scroll note. Wording is swapped for touch in JS. Clears on first scroll. -->
+  <!-- Trackpad note. Pointer devices only. Clears on first scroll. -->
   <p id="pad-note" aria-hidden="true">Use two fingers to scroll up or down</p>
 
   <!-- Card modal -->
@@ -993,8 +996,6 @@
   var wires = document.getElementById('wires');
   var hint = document.getElementById('hint');
   var padNote = document.getElementById('pad-note');
-  // a phone scrolls with one finger — the two-finger wording is trackpad-only
-  if(padNote && coarsePointer) padNote.textContent = 'Swipe up or down to scroll';
   var scrim = document.getElementById('scrim');
   var card = document.getElementById('card');
   var cardScroll = document.getElementById('card-scroll');
